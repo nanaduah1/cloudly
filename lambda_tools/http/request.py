@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 from lambda_tools.http.validators import ValidationError
 
