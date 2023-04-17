@@ -16,11 +16,6 @@ class ItemKey(ABC):
         pass
 
 
-class ItemKeyBuilder(ItemKey):
-    def build(self) -> Dict[str, str]:
-        return super().build()
-
-
 @dataclass(frozen=True)
 class PutItemCommand:
     database_table: Any
@@ -29,24 +24,24 @@ class PutItemCommand:
     data_shaper: Callable[[dict], dict] = None
 
     def execute(self):
-        now = datetime.utcnow().isoformat()
         data = self.data
 
         if self.data_shaper and callable(self.data_shaper):
             data = self.data_shaper(data)
 
+        now = datetime.utcnow()
         if not "id" in data or not data["id"]:
-            data["id"] = uuid.uuid4().hex
+            data["id"] = f"{now.timestamp()}-{uuid.uuid4()}"
 
         if not "timestamp" in data or not data["timestamp"]:
-            data["timestamp"] = now
+            data["timestamp"] = now.isoformat()
 
         keys = self.key_class(self.data).build()
 
         item = {
             **keys,
             "data": data,
-            "created": now,
+            "created": data["timestamp"],
         }
         self.database_table.put_item(Item=item)
 
@@ -92,7 +87,9 @@ class UpdateItemCommand:
     data: dict
 
     def execute(self):
-        attr_names, exp_vals, update_expr = SimpleUpdateExpression(self.data).build()
+        now = datetime.utcnow().isoformat()
+        item = {"data": self.data, "updatedAt": now}
+        attr_names, exp_vals, update_expr = SimpleUpdateExpression(item).build()
         self.database_table.update_item(
             key=self.key,
             ExpressionAttributeNames=attr_names,
