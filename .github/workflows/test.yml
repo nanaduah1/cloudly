@@ -3,6 +3,7 @@ run-name: Testing ${{ github.head_ref }} by @${{ github.actor }}
 on:
   push:
     branches: [main]
+  pull_request: [main]
 
 jobs:
   run-tests:
