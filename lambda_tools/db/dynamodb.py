@@ -30,7 +30,6 @@ class PutItemCommand:
 
     def execute(self):
         now = datetime.utcnow().isoformat()
-        keys = self.key_class(self.data).build()
         data = self.data
 
         if self.data_shaper and callable(self.data_shaper):
@@ -41,6 +40,8 @@ class PutItemCommand:
 
         if not "timestamp" in data or not data["timestamp"]:
             data["timestamp"] = now
+
+        keys = self.key_class(self.data).build()
 
         item = {
             **keys,
