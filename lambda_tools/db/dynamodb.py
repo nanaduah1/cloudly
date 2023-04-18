@@ -44,6 +44,7 @@ class PutItemCommand:
             "created": data["timestamp"],
         }
         self.database_table.put_item(Item=item)
+        return item
 
 
 @dataclass(frozen=True)
