@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-from lambda_tools.http.validators import ValidationError
+from cloudly.http.validators import ValidationError
 
 
 @dataclass

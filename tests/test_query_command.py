@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from lambda_tools.db.dynamodb import QueryTableCommand
+from cloudly.db.dynamodb import QueryTableCommand
 
 
 @dataclass

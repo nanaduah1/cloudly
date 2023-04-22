@@ -1,4 +1,4 @@
-from lambda_tools.db.dynamodb import SimpleUpdateExpression
+from cloudly.db.dynamodb import SimpleUpdateExpression
 
 
 def test_update_simple_object():

@@ -1,5 +1,5 @@
 import pytest
-from lambda_tools.http.validators import (
+from cloudly.http.validators import (
     DecimalNumber,
     Required,
     ValidationError,
