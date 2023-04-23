@@ -34,28 +34,30 @@ class Validator:
 
     def _run_validators(self, data: dict, schema: dict) -> Tuple[dict, List[str]]:
         errors = []
+        input_data = data or {}
         for field, validator in schema.items():
             if not validator:
                 continue
 
-            value = data.get(field)
+            value = input_data.get(field)
 
-            if isinstance(value, dict):
+            if isinstance(validator, dict):
                 cleaned_value, inner_errors = self._run_validators(
                     schema=validator,
                     data=value,
                 )
                 errors += inner_errors
-                data[field] = cleaned_value
+                input_data[field] = cleaned_value
             else:
                 field_validators = validator
                 if issubclass(field_validators.__class__, Rule):
                     field_validators = [validator]
+
                 errors += [
                     e for e in (v.validate(value) for v in field_validators) if e
                 ]
 
-        return data, errors
+        return input_data, errors
 
 
 class Required(Rule):
@@ -115,7 +117,7 @@ class IntegerNumber(Rule):
             if self.max and cleaned_value > self.max:
                 return self.error(f"cannot be more than {self.max}")
         except Exception:
-            return self.error(f"must be an integer between{self.man} and {self.max}")
+            return self.error(f"must be an integer between{self.max} and {self.max}")
 
 
 def string_field(name: str, min=None, max=None, required=False):

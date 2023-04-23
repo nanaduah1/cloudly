@@ -1,9 +1,11 @@
 import pytest
 from cloudly.http.validators import (
     DecimalNumber,
+    IntegerNumber,
     Required,
     ValidationError,
     Validator,
+    string_field,
 )
 
 
@@ -57,3 +59,23 @@ def test_decimal_validator_with_excess_decimal_places():
     response = tested.validate("10.0099")
     assert response is not None
     assert "decimal places" in response
+
+
+def test_string_field():
+    validation_schema = {
+        "contact": {
+            "firstName": string_field("firstName", required=True),
+            "lastName": string_field("lastName", required=True),
+            "phoneNumber": string_field("phoneNumber", required=True, max=10, min=10),
+        },
+        "business": {
+            "name": string_field("name", required=True),
+            "address": string_field("address", required=True),
+            "city": string_field("city", required=True),
+            "country": string_field("country", required=True),
+        },
+    }
+    tested = Validator(validation_schema)
+
+    with pytest.raises(ValidationError):
+        tested.validate({"age": 0})
