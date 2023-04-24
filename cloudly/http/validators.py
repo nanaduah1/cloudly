@@ -3,6 +3,7 @@ from decimal import Decimal
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
+from flowfast.step import Task, Mapping
 
 
 class ValidationError(Exception):
@@ -117,7 +118,7 @@ class IntegerNumber(Rule):
             if self.max and cleaned_value > self.max:
                 return self.error(f"cannot be more than {self.max}")
         except Exception:
-            return self.error(f"must be an integer between{self.max} and {self.max}")
+            return self.error(f"must be an integer between {self.min} and {self.max}")
 
 
 def string_field(name: str, min=None, max=None, required=False):
@@ -130,3 +131,11 @@ def string_field(name: str, min=None, max=None, required=False):
         validators.append(MaxLength(name, max))
 
     return validators
+
+
+@dataclass
+class RunValidation(Task):
+    schema: Mapping
+
+    def process(self, input: Mapping) -> Mapping:
+        return Validator(self.schema).validate(input)
