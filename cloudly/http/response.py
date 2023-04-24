@@ -7,7 +7,7 @@ from flowfast.step import Task, Mapping
 def HttpResponse(status_code=200, data: dict = None):
     return {
         "statusCode": status_code,
-        "Content-Type": "application/json",
+        "headers": {"Content-Type": "application/json"},
         "body": json.dumps(data) if data else "",
     }
 
