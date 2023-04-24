@@ -66,13 +66,13 @@ def http_api(
                 first_step = all_steps[0]
                 func_response = func(event, context)
                 request_data = {
-                    **event,
-                    "context": context,
+                    **json.loads(event.get("body", "{}")),
+                    "_request": {"event": event, "context": context},
                 }
 
                 # Add the function response if any
                 if func_response:
-                    request_data["context"]["step_0"] = func_response
+                    request_data["_request"]["step_0"] = func_response
 
                 pipeline = Workflow(first_step)
                 for step in all_steps[1:]:

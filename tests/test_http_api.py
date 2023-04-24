@@ -42,7 +42,7 @@ def test_validator_with_valid_input():
         pass
 
     tested = handler
-    response = tested({"name": "Yaw Baah", "age": 1}, {})
+    response = tested({"body": json.dumps({"name": "Yaw Baah", "age": 1})}, {})
     assert response["statusCode"] == 200
 
 
