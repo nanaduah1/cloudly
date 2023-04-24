@@ -84,7 +84,7 @@ def test_http_api_with_2_pipeline_tasks():
 def test_http_api_with_custom_response_task():
     @http_api(
         AddHello(),
-        response_shaper=lambda d: {k: v for k, v in d.items() if k not in ["context"]},
+        clean_response=lambda d: {k: v for k, v in d.items() if k not in ["context"]},
     )
     def handler(event, context):
         pass

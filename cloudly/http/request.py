@@ -48,7 +48,7 @@ def http_api(
     *args: List[Step],
     validation_schema=None,
     status=200,
-    response_shaper: Callable[[Any], Any] = None
+    clean_response: Callable[[Any], Any] = None
 ):
     def wrapper(func) -> Any:
         @wraps(func)
@@ -79,7 +79,7 @@ def http_api(
                     pipeline = pipeline.next(step)
 
                 result = pipeline.run(request_data)
-                final_shape = response_shaper(result) if response_shaper else result
+                final_shape = clean_response(result) if clean_response else result
                 return HttpResponse(status, final_shape)
 
             except ValidationError as ex:
