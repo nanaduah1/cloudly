@@ -30,7 +30,7 @@ class Validator:
         input = {**data}
         cleaned_data, errors = self._run_validators(data=input, schema=self.schema)
         if errors:
-            raise ValidationError(json.dumps(errors))
+            raise ValidationError(",".join(errors))
         return cleaned_data
 
     def _run_validators(self, data: dict, schema: dict) -> Tuple[dict, List[str]]:

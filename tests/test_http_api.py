@@ -95,4 +95,29 @@ def test_http_api_with_custom_response_task():
     body = json.loads(response["body"])
     assert body["Hello"] == "World!"
     assert "context" not in response
-    print(response)
+
+
+def test_http_api_with_validator_task():
+    @http_api(
+        clean_response=lambda d: {k: v for k, v in d.items() if k not in ["context"]},
+        validation_schema={"age": IntegerNumber(min=5, max=20)},
+    )
+    def handler(event, context):
+        pass
+
+    tested = handler
+    response = tested({"body": json.dumps({})}, {})
+    assert response["statusCode"] == 400
+
+
+def test_http_api_with_validator_required():
+    @http_api(
+        clean_response=lambda d: {k: v for k, v in d.items() if k not in ["context"]},
+        validation_schema={"age": string_field("age", required=True)},
+    )
+    def handler(event, context):
+        pass
+
+    tested = handler
+    response = tested({"body": json.dumps({})}, {})
+    assert response["statusCode"] == 400

@@ -83,7 +83,7 @@ def http_api(
                 return HttpResponse(status, final_shape)
 
             except ValidationError as ex:
-                return HttpResponse(400, {"error": str(ex)})
+                return HttpResponse(400, {"error": str(ex).split(",")})
             except Exception as ex:
                 print(ex)
                 return HttpResponse(
