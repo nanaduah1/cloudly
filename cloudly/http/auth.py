@@ -12,11 +12,12 @@ def inject_user(cognito_client: Any):
     def wrapper(func) -> Any:
         @wraps(func)
         def decoration(event, context) -> Any:
-            user = _get_user(event, context)
+            user = _get_user(event)
             event["@user"] = user
+            func(event, context)
 
-        def _get_user(event, context):
-            event = input.get("_request", {}).get("event")
+        def _get_user(input):
+            event = {**input}
             if (
                 not event
                 or "headers" not in event

@@ -14,6 +14,7 @@ def http_api(
     def wrapper(func) -> Any:
         @wraps(func)
         def decoration(event, context) -> Any:
+            func(event, context)
             return AwsLambdaApiHandler(
                 event,
                 args,
