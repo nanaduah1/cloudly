@@ -122,7 +122,7 @@ class AwsLambdaApiHandler(HttpRequest):
         }
 
         pipeline = Workflow(first_step)
-        for step in all_steps:
+        for step in all_steps[1:]:
             pipeline = pipeline.next(step)
 
         result = pipeline.run(request_data)
