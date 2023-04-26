@@ -1,5 +1,5 @@
 import json
-from cloudly.http.request import http_api
+from cloudly.http.decorators import http_api
 
 from cloudly.http.validators import IntegerNumber, string_field
 from flowfast.step import Task, Mapping

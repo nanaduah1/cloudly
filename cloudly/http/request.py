@@ -1,25 +1,76 @@
 import json
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List
+from typing import Any, Callable, Iterable, List
 from flowfast.base import Step
 from flowfast.workflow import Workflow
 from functools import wraps
 
-from cloudly.http.validators import RunValidation, ValidationError
+from cloudly.http.validators import ValidationError, Validator
 from cloudly.http.response import HttpResponse
+
+from typing import List, Optional, Union
+from flowfast.step import Task, Mapping
+
+
+class RequestContext:
+    def __init__(self, event: dict):
+        self._ctx = event.get("requestContext", {})
+
+    @property
+    def user_groups(self) -> Union[List[str], None]:
+        return (
+            self._ctx.get("authorizer", {})
+            .get("jwt", {})
+            .get("claims", {})
+            .get("cognito:groups", [])
+        )
+
+    @property
+    def client_id(self) -> Optional[str]:
+        return (
+            self._ctx.get("authorizer", {})
+            .get("jwt", {})
+            .get("claims", {})
+            .get("client_id")
+        )
+
+    @property
+    def username(self) -> Optional[str]:
+        return (
+            self._ctx.get("authorizer", {})
+            .get("jwt", {})
+            .get("claims", {})
+            .get("username")
+        )
+
+    @property
+    def account_id(self) -> Optional[str]:
+        return self._ctx.get("accountId")
+
+    @property
+    def app_id(self) -> Optional[str]:
+        return self._ctx.get("appId")
+
+    @property
+    def client_ip_address(self) -> Optional[str]:
+        return self._ctx.get("http", {}).get("sourceIp")
+
+    @property
+    def path(self) -> Optional[str]:
+        return self._ctx.get("http", {}).get("path")
 
 
 @dataclass
 class HttpRequest(ABC):
     event: dict
 
-    def dispatch(self):
+    def dispatch(self, status_code=200):
         try:
             data = json.loads(self.event.get("body", "{}"))
             cleaned_data = self.validate(data)
             record = self.execute(cleaned_data)
-            return self.respond(data=record.get("data"))
+            return self.respond(data=record, status_code=status_code)
         except ValidationError as ex:
             return self.respond(
                 status_code=400,
@@ -44,53 +95,47 @@ class HttpRequest(ABC):
         return HttpResponse(status_code, data)
 
 
-def http_api(
-    *args: List[Step],
-    validation_schema=None,
-    status=200,
+@dataclass
+class AwsLambdaApiHandler(HttpRequest):
+    middleware: List[Step] = None
+    validation_schema: dict = None
     clean_response: Callable[[Any], Any] = None
-):
-    def wrapper(func) -> Any:
-        @wraps(func)
-        def decoration(event, context) -> Any:
-            try:
-                all_steps = tuple(args)
 
-                # Insert validation as first step
-                if validation_schema:
-                    all_steps = (RunValidation(validation_schema),) + all_steps
+    def execute(self, cleaned_data: dict) -> dict:
+        all_steps = tuple()
+        if issubclass(self.middleware.__class__, Step):
+            all_steps = (self.middleware,)
+        elif isinstance(self.middleware, Iterable):
+            all_steps = self.middleware
 
-                if not all_steps:
-                    return HttpResponse()
+        if not all_steps:
+            return {}
 
-                first_step = all_steps[0]
-                func_response = func(event, context)
-                request_data = {
-                    **json.loads(event.get("body", "{}")),
-                    "_request": {"event": event, "context": context},
-                }
+        first_step = all_steps[0]
+        request_data = {
+            **cleaned_data,
+            "_request": {
+                "event": self.event,
+                "context": RequestContext(self.event),
+                "@user": self.event.get("@user"),
+            },
+        }
 
-                # Add the function response if any
-                if func_response:
-                    request_data["_request"]["step_0"] = func_response
+        pipeline = Workflow(first_step)
+        for step in all_steps:
+            pipeline = pipeline.next(step)
 
-                pipeline = Workflow(first_step)
-                for step in all_steps[1:]:
-                    pipeline = pipeline.next(step)
+        result = pipeline.run(request_data)
+        cleaned_result = self.clean_response(result) if self.clean_response else result
+        return self._exclude_metadata(cleaned_result)
 
-                result = pipeline.run(request_data)
-                final_shape = clean_response(result) if clean_response else result
-                return HttpResponse(status, final_shape)
+    def validate(self, data: dict) -> dict:
+        if not self.validation_schema:
+            return data
+        return Validator(self.validation_schema).validate(data)
 
-            except ValidationError as ex:
-                return HttpResponse(400, {"error": str(ex).split(",")})
-            except Exception as ex:
-                print(ex)
-                return HttpResponse(
-                    status_code=500,
-                    data={"error": "We hit a snag processing your request."},
-                )
+    def _exclude_metadata(self, response: dict):
+        if response is None:
+            return
 
-        return decoration
-
-    return wrapper
+        return {k: v for k, v in response.items() if k not in ["_request"]}
