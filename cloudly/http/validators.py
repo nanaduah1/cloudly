@@ -101,9 +101,11 @@ class DecimalNumber(Rule):
     def validate(self, value: Any, raw_data: dict = None) -> str:
         try:
             cleaned_value = Decimal(value)
-            _, point = str(cleaned_value).split(".")
-            if len(point) > self.decimal_places:
-                return self.error(f"must be {self.decimal_places} decimal places")
+
+            if "." in str(cleaned_value):
+                _, point = str(cleaned_value).split(".")
+                if len(point) > self.decimal_places:
+                    return self.error(f"must be {self.decimal_places} decimal places")
 
             if self.max and cleaned_value > Decimal(self.max):
                 return self.error(f"cannot be more than {self.max}")
