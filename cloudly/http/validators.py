@@ -1,8 +1,8 @@
 import re
 from decimal import Decimal
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from dataclasses import dataclass, field
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from flowfast.step import Task, Mapping
 
 
@@ -144,6 +144,15 @@ class RegexValidator(Rule):
             return self.error(f"does not match the pattern {self.pattern}")
 
 
+@dataclass
+class OptionsValidator(Rule):
+    options: Iterable[Any] = field(default_factory=tuple)
+
+    def validate(self, value: Any, raw_data: dict = None) -> str:
+        if value and not value in self.options:
+            return self.error(f"must be one of [{', '.join(self.options)}]")
+
+
 def int_field(name: str, min: int = None, max: int = None, required=False):
     validators = []
     if required is True:
@@ -165,7 +174,13 @@ def decimal_field(
 
 
 def string_field(
-    name: str, min=None, max=None, required=False, type="text", pattern=None
+    name: str,
+    min=None,
+    max=None,
+    required=False,
+    type="text",
+    pattern=None,
+    options: Iterable[Any] = None,
 ):
     validators = []
     if required is True:
@@ -179,6 +194,9 @@ def string_field(
         validators.append(Email(name))
     if pattern:
         validators.append(RegexValidator(name, pattern))
+
+    if options:
+        validators.append(OptionsValidator(name, options))
 
     return validators
 
