@@ -109,8 +109,8 @@ class DecimalNumber(Rule):
 
             if self.min and cleaned_value < Decimal(self.min):
                 return self.error(f"cannot be less than {self.min}")
-            return cleaned_value
-        except ValueError:
+
+        except Exception:
             return self.error("must be a decimal")
 
 
@@ -126,14 +126,14 @@ class IntegerNumber(Rule):
                 return self.error(f"cannot be less than {self.min}")
             if self.max and cleaned_value > self.max:
                 return self.error(f"cannot be more than {self.max}")
-            return cleaned_value
+
         except Exception:
             return self.error(f"must be an integer between {self.min} and {self.max}")
 
 
 @dataclass
 class RegexValidator(Rule):
-    pattern: str
+    pattern: str = "*"
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
         try:
