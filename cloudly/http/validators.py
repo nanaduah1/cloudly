@@ -86,9 +86,10 @@ class MaxLength(Rule):
 
 
 class Email(Rule):
+    pattern = r"^\S+@\S+\.\S+$"
+
     def validate(self, value: Any, raw_data: dict = None) -> str:
-        if value and ("@" not in value or "." not in value):
-            return self.error("not a valid email")
+        return RegexValidator(self.field_name, self.pattern).validate(value)
 
 
 @dataclass
