@@ -1,4 +1,4 @@
-import json
+import re
 from decimal import Decimal
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -94,6 +94,8 @@ class Email(Rule):
 @dataclass
 class DecimalNumber(Rule):
     decimal_places: int = 2
+    min: str = None
+    max: str = None
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
         try:
@@ -101,7 +103,14 @@ class DecimalNumber(Rule):
             _, point = str(cleaned_value).split(".")
             if len(point) > self.decimal_places:
                 return self.error(f"must be {self.decimal_places} decimal places")
-        except Exception:
+
+            if self.max and cleaned_value > Decimal(self.max):
+                return self.error(f"cannot be more than {self.max}")
+
+            if self.min and cleaned_value < Decimal(self.min):
+                return self.error(f"cannot be less than {self.min}")
+            return cleaned_value
+        except ValueError:
             return self.error("must be a decimal")
 
 
@@ -117,11 +126,47 @@ class IntegerNumber(Rule):
                 return self.error(f"cannot be less than {self.min}")
             if self.max and cleaned_value > self.max:
                 return self.error(f"cannot be more than {self.max}")
+            return cleaned_value
         except Exception:
             return self.error(f"must be an integer between {self.min} and {self.max}")
 
 
-def string_field(name: str, min=None, max=None, required=False):
+@dataclass
+class RegexValidator(Rule):
+    pattern: str
+
+    def validate(self, value: Any, raw_data: dict = None) -> str:
+        try:
+            regex = re.compile(self.pattern)
+            if not regex.match(value):
+                return self.error(f"does not match the pattern {self.pattern}")
+        except Exception:
+            return self.error(f"does not match the pattern {self.pattern}")
+
+
+def int_field(name: str, min: int = None, max: int = None, required=False):
+    validators = []
+    if required is True:
+        validators.append(Required(name))
+    validators.append(IntegerNumber(name, max, min))
+
+    return validators
+
+
+def decimal_field(
+    name: str, min: str = None, max: str = None, decimal_places=2, required=False
+):
+    validators = []
+    if required is True:
+        validators.append(Required(name))
+    validators.append(DecimalNumber(name, decimal_places, min, max))
+
+    return validators
+
+
+def string_field(
+    name: str, min=None, max=None, required=False, type="text", pattern=None
+):
     validators = []
     if required is True:
         validators.append(Required(name))
@@ -129,6 +174,11 @@ def string_field(name: str, min=None, max=None, required=False):
         validators.append(MinLength(name, min))
     if max:
         validators.append(MaxLength(name, max))
+
+    if type == "email":
+        validators.append(Email(name))
+    if pattern:
+        validators.append(RegexValidator(name, pattern))
 
     return validators
 
