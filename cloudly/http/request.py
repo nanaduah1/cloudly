@@ -134,8 +134,11 @@ class AwsLambdaApiHandler(HttpRequest):
             return data
         return Validator(self.validation_schema).validate(data)
 
-    def _exclude_metadata(self, response: dict):
-        if response is None:
+    def _exclude_metadata(self, results: dict):
+        if results is None:
             return
 
-        return {k: v for k, v in response.items() if k not in ["_request"]}
+        if isinstance(results, dict):
+            return {k: v for k, v in results.items() if k not in ["_request"]}
+
+        return results
