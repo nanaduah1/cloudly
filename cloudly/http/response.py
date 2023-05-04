@@ -10,7 +10,7 @@ def HttpResponse(status_code=200, data: dict = None):
     return {
         "statusCode": status_code,
         "headers": {"Content-Type": "application/json"},
-        "body": "" if data is None else json.dumps(data, DecimalEncoder),
+        "body": "" if data is None else json.dumps(data, cls=DecimalEncoder),
     }
 
 
