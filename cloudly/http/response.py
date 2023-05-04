@@ -3,12 +3,14 @@ import json
 from typing import Any, Callable
 from flowfast.step import Task, Mapping
 
+from cloudly.http.utils import DecimalEncoder
+
 
 def HttpResponse(status_code=200, data: dict = None):
     return {
         "statusCode": status_code,
         "headers": {"Content-Type": "application/json"},
-        "body": json.dumps(data) if data else "",
+        "body": "" if data is None else json.dumps(data, DecimalEncoder),
     }
 
 
