@@ -32,7 +32,7 @@ def inject_user(cognito_client: Any):
 
             response = cognito_client.get_user(AccessToken=accessToken)
             user = {attr["Name"]: attr["Value"] for attr in response["UserAttributes"]}
-            user["username"] = response["UserName"]
+            user["username"] = response["Username"]
             return user
 
         return decoration
