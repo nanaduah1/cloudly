@@ -1,4 +1,4 @@
-from cloudly.http.auth import user_groups
+from cloudly.http.decorators import http_api
 from cloudly.http.response import HttpResponse
 
 
@@ -11,7 +11,7 @@ def create_test_event(*groups):
 
 
 def test_returns_403_if_user_has_no_group():
-    @user_groups("admin")
+    @http_api(allow_groups=["admin"])
     def handler(event, context):
         return HttpResponse(data={"data": "ok"})
 
@@ -21,7 +21,7 @@ def test_returns_403_if_user_has_no_group():
 
 
 def test_returns_403_if_user_in_deny_group():
-    @user_groups(deny=["admin"])
+    @http_api(deny_groups=["admin"])
     def handler(event, context):
         return HttpResponse(data={"data": "ok"})
 
@@ -31,7 +31,7 @@ def test_returns_403_if_user_in_deny_group():
 
 
 def test_returns_200_if_user_in_deny_but_has_other_group_allowed():
-    @user_groups("admin", deny=["sales"])
+    @http_api(allow_groups=["admin"], deny_groups=["sales"])
     def handler(event, context):
         return HttpResponse(data={"data": "ok"})
 
@@ -41,7 +41,7 @@ def test_returns_200_if_user_in_deny_but_has_other_group_allowed():
 
 
 def test_returns_200_if_not_in_deny_group():
-    @user_groups(deny=["admin"])
+    @http_api(deny_groups=["admin"])
     def handler(event, context):
         return HttpResponse(data={"data": "ok"})
 

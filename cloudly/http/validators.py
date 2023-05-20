@@ -5,9 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from flowfast.step import Task, Mapping
 
-
-class ValidationError(Exception):
-    pass
+from cloudly.http.exceptions import ValidationError
 
 
 @dataclass

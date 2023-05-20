@@ -4,60 +4,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Iterable, List
 from flowfast.base import Step
 from flowfast.workflow import Workflow
+from cloudly.http.context import RequestContext
+from cloudly.http.exceptions import NotAuthorizedError
+from cloudly.http.security import user_groups
 
 from cloudly.http.validators import ValidationError, Validator
 from cloudly.http.response import HttpResponse
 
-from typing import List, Optional, Union
-from flowfast.step import Task
-
-
-class RequestContext:
-    def __init__(self, event: dict):
-        self._ctx = event.get("requestContext", {})
-
-    @property
-    def user_groups(self) -> Union[List[str], None]:
-        return (
-            self._ctx.get("authorizer", {})
-            .get("jwt", {})
-            .get("claims", {})
-            .get("cognito:groups", [])
-        )
-
-    @property
-    def client_id(self) -> Optional[str]:
-        return (
-            self._ctx.get("authorizer", {})
-            .get("jwt", {})
-            .get("claims", {})
-            .get("client_id")
-        )
-
-    @property
-    def username(self) -> Optional[str]:
-        return (
-            self._ctx.get("authorizer", {})
-            .get("jwt", {})
-            .get("claims", {})
-            .get("username")
-        )
-
-    @property
-    def account_id(self) -> Optional[str]:
-        return self._ctx.get("accountId")
-
-    @property
-    def app_id(self) -> Optional[str]:
-        return self._ctx.get("appId")
-
-    @property
-    def client_ip_address(self) -> Optional[str]:
-        return self._ctx.get("http", {}).get("sourceIp")
-
-    @property
-    def path(self) -> Optional[str]:
-        return self._ctx.get("http", {}).get("path")
+from typing import List
 
 
 @dataclass
@@ -75,6 +29,8 @@ class HttpRequest(ABC):
                 status_code=400,
                 data={"error": str(ex)},
             )
+        except NotAuthorizedError as ex:
+            return HttpResponse(status_code=403, data={"error": "Not authorized"})
         except Exception as ex:
             print(ex)
             return self.respond(
@@ -99,8 +55,13 @@ class AwsLambdaApiHandler(HttpRequest):
     middleware: List[Step] = None
     validation_schema: dict = None
     clean_response: Callable[[Any], Any] = None
+    allow_groups: list = None
+    deny_groups: list = None
 
     def execute(self, cleaned_data: dict) -> dict:
+        # IMPORTANT: Must be first statement in the execution
+        self._check_permissions()
+
         all_steps = tuple()
         if issubclass(self.middleware.__class__, Step):
             all_steps = (self.middleware,)
@@ -141,3 +102,10 @@ class AwsLambdaApiHandler(HttpRequest):
             return {k: v for k, v in results.items() if k not in ["_request"]}
 
         return results
+
+    def _check_permissions(self):
+        user_groups(
+            self.event,
+            self.allow_groups or [],
+            self.deny_groups,
+        )

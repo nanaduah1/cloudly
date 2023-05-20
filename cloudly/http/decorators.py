@@ -9,7 +9,9 @@ def http_api(
     *args: List[Step],
     validation_schema=None,
     status=200,
-    clean_response: Callable[[Any], Any] = None
+    clean_response: Callable[[Any], Any] = None,
+    allow_groups: list = None,
+    deny_groups: list = None
 ):
     def wrapper(func) -> Any:
         @wraps(func)
@@ -20,6 +22,8 @@ def http_api(
                 args,
                 validation_schema,
                 clean_response,
+                allow_groups,
+                deny_groups,
             ).dispatch(status)
 
         return decoration
