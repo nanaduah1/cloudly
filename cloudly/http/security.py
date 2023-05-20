@@ -23,15 +23,5 @@ def user_groups(
     else:
         authorized = not allowed_groups.isdisjoint(user_context.user_groups)
 
-    print(
-        "ALLOW: ",
-        allowed_groups,
-        " DENY: ",
-        deny_groups,
-        " USER: ",
-        user_context.user_groups,
-        " AUTHORIZED: ",
-        authorized,
-    )
     if not authorized:
         raise NotAuthorizedError("User not authorized")
