@@ -5,6 +5,7 @@ from cloudly.http.validators import (
     Required,
     ValidationError,
     Validator,
+    list_field,
     string_field,
 )
 
@@ -79,3 +80,53 @@ def test_string_field():
 
     with pytest.raises(ValidationError):
         tested.validate({"age": 0})
+
+
+def test_list_validator_is_optional():
+    schema = {
+        "name": string_field("name", required=True),
+        "options": list_field("options"),
+    }
+
+    Validator(schema).validate({"name": "Yellow"})
+
+
+def test_required_list_fails():
+    schema = {
+        "name": string_field("name", required=True),
+        "options": list_field("options", required=True),
+    }
+
+    with pytest.raises(ValidationError):
+        Validator(schema).validate({"name": "Yellow"})
+
+
+def test_min_list_validation():
+    schema = {
+        "name": string_field("name", required=True),
+        "options": list_field("options", min_items=1),
+    }
+
+    with pytest.raises(ValidationError):
+        Validator(schema).validate({"name": "Yellow"})
+
+
+def test_max_length_fails():
+    schema = {
+        "name": string_field("name", required=True),
+        "options": list_field("options", max_items=1),
+    }
+
+    with pytest.raises(ValidationError):
+        Validator(schema).validate({"name": "Yellow", "options": [{}, {}]})
+
+
+def test_item_schema_validates():
+    schema = {
+        "options": list_field(
+            "options", item_schema={"name": string_field("options.name", required=True)}
+        ),
+    }
+
+    with pytest.raises(ValidationError):
+        Validator(schema).validate({"name": "Yellow", "options": [{}]})

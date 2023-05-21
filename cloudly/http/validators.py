@@ -208,3 +208,46 @@ class RunValidation(Task):
 
     def process(self, input: Mapping) -> Mapping:
         return Validator(self.schema).validate(input)
+
+
+@dataclass
+class ListFieldValidator(Rule):
+    item_schema: dict = None
+    min_items: int = 0
+    max_items: int = None
+
+    def validate(self, value: Any, raw_data: dict = None) -> str:
+        cleaned_value = value or []
+        if not isinstance(cleaned_value, Iterable):
+            return
+
+        items_count = len(cleaned_value)
+        if self.min_items and self.min_items > 0 and items_count < self.min_items:
+            return self.error(f"must have at least {self.min_items} items")
+
+        if self.max_items and self.max_items < items_count:
+            return self.error(f"must have at most {self.max_items} items")
+
+        if not self.item_schema or not isinstance(self.item_schema, dict):
+            return
+
+        item_validator = Validator(self.item_schema)
+        try:
+            for index, item in enumerate(cleaned_value):
+                item_validator.validate(item)
+        except ValidationError as ex:
+            return self.error(f"[{index}]: {str(ex)}")
+
+        return value
+
+
+def list_field(
+    name: str, min_items=None, max_items=None, required=False, item_schema: dict = None
+):
+    validators = []
+
+    validators.append(ListFieldValidator(name, item_schema, min_items, max_items))
+    if required:
+        validators.append(Required(name))
+
+    return validators
