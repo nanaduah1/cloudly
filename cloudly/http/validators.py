@@ -238,8 +238,6 @@ class ListFieldValidator(Rule):
         except ValidationError as ex:
             return self.error(f"[{index}]: {str(ex)}")
 
-        return value
-
 
 def list_field(
     name: str, min_items=None, max_items=None, required=False, item_schema: dict = None
