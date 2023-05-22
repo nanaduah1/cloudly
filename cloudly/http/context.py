@@ -7,12 +7,15 @@ class RequestContext:
 
     @property
     def user_groups(self) -> Union[List[str], None]:
-        return (
+        groups = (
             self._ctx.get("authorizer", {})
             .get("jwt", {})
             .get("claims", {})
-            .get("cognito:groups", [])
+            .get("cognito:groups")
         )
+
+        if groups and isinstance(groups, str):
+            return groups[1:-1].split(",")
 
     @property
     def client_id(self) -> Optional[str]:
