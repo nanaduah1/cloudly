@@ -18,12 +18,12 @@ def http_api(
         def decoration(event, context) -> Any:
             func(event, context)
             return AwsLambdaApiHandler(
-                event,
-                args,
-                validation_schema,
-                clean_response,
-                allow_groups,
-                deny_groups,
+                event=event,
+                middleware=args,
+                validation_schema=validation_schema,
+                clean_response=clean_response,
+                allow_groups=allow_groups,
+                deny_groups=deny_groups,
             ).dispatch(status)
 
         return decoration

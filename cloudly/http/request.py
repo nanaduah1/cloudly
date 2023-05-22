@@ -17,9 +17,14 @@ from typing import List
 @dataclass
 class HttpRequest(ABC):
     event: dict
+    allow_groups: list = None
+    deny_groups: list = None
 
     def dispatch(self, status_code=200):
         try:
+            # IMPORTANT: Must be first statement in the execution
+            self._check_permissions()
+
             data = json.loads(self.event.get("body", "{}"))
             cleaned_data = self.validate(data)
             record = self.execute(cleaned_data)
@@ -49,19 +54,21 @@ class HttpRequest(ABC):
     def respond(self, status_code=200, data: dict = None):
         return HttpResponse(status_code, data)
 
+    def _check_permissions(self):
+        user_groups(
+            self.event,
+            self.allow_groups or [],
+            self.deny_groups,
+        )
+
 
 @dataclass
 class AwsLambdaApiHandler(HttpRequest):
     middleware: List[Step] = None
     validation_schema: dict = None
     clean_response: Callable[[Any], Any] = None
-    allow_groups: list = None
-    deny_groups: list = None
 
     def execute(self, cleaned_data: dict) -> dict:
-        # IMPORTANT: Must be first statement in the execution
-        self._check_permissions()
-
         all_steps = tuple()
         if issubclass(self.middleware.__class__, Step):
             all_steps = (self.middleware,)
@@ -102,10 +109,3 @@ class AwsLambdaApiHandler(HttpRequest):
             return {k: v for k, v in results.items() if k not in ["_request"]}
 
         return results
-
-    def _check_permissions(self):
-        user_groups(
-            self.event,
-            self.allow_groups or [],
-            self.deny_groups,
-        )
