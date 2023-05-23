@@ -17,6 +17,8 @@ class RequestContext:
         if groups and isinstance(groups, str):
             return groups[1:-1].split(",")
 
+        return tuple()
+
     @property
     def client_id(self) -> Optional[str]:
         return (
