@@ -5,7 +5,9 @@ from cloudly.http.response import HttpResponse
 def create_test_event(*groups):
     return {
         "requestContext": {
-            "authorizer": {"jwt": {"claims": {"cognito:groups": list(groups)}}}
+            "authorizer": {
+                "jwt": {"claims": {"cognito:groups": f"[{ ' '.join(groups)}]"}}
+            }
         }
     }
 
