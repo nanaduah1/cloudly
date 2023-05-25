@@ -15,7 +15,11 @@ class RequestContext:
         )
 
         if groups and isinstance(groups, str):
-            return groups[1:-1].split(",")
+            groups_str = groups[1:-1]
+            if "," in groups_str:
+                return groups_str.split(",")
+            else:
+                return groups_str.split(" ")
 
         return tuple()
 
