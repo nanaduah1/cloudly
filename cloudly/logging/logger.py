@@ -29,7 +29,7 @@ class DynamoTableHandler(Handler):
                     "stack": record.stack_info,
                 }
 
-            if record.metric:
+            if getattr(record, "metric", None):
                 log["metric"] = record.metric
 
             self.database_table.put_item(
@@ -47,7 +47,7 @@ class DynamoTableHandler(Handler):
 class Logger:
     logger: logging.Logger
 
-    def event(self, eventType: str, message: str, metric: str, value: Any):
+    def event(self, eventType: str, message: str, metric: str, value: Any = 1):
         extra = {"eventType": eventType, "metric": {metric: value}}
         self.logger.info(message, extra=extra)
 
@@ -57,12 +57,25 @@ class Logger:
 
     def warn(self, message: str, **kwargs):
         extra = {**kwargs, "eventType": "warning"}
-        self.logger.warn(message, extra=extra)
+        self.logger.warning(message, extra=extra)
 
     def error(self, message: str, **kwargs):
-        extra = {**kwargs, "eventType": "error"}
+        extra = {**kwargs, "eventType": "error", "metric": {"count": 1}}
         self.logger.error(message, extra=extra)
 
     def exception(self, message: str, ex: Exception, **kwargs):
         extra = {**kwargs, "eventType": "exception", "metric": {"count": 1}}
         self.logger.exception(message, exc_info=ex, extra=extra)
+
+    @classmethod
+    def createLogger(
+        cls, name: str, client_id: str, database_table: Any, level=logging.INFO
+    ):
+        _logger = logging.getLogger(name)
+        handler = DynamoTableHandler(client_id, database_table, level)
+        _logger.setLevel(level)
+        for h in _logger.handlers:
+            _logger.removeHandler(h)
+        _logger.addHandler(handler)
+
+        return cls(_logger)

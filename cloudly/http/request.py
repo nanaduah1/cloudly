@@ -13,12 +13,15 @@ from cloudly.http.response import HttpResponse
 
 from typing import List
 
+from cloudly.logging.logger import Logger
+
 
 @dataclass
 class HttpRequest(ABC):
     event: dict
     allow_groups: list = None
     deny_groups: list = None
+    logger: Logger = None
 
     def dispatch(self, status_code=200):
         try:
@@ -30,14 +33,16 @@ class HttpRequest(ABC):
             record = self.execute(cleaned_data)
             return self.respond(data=record, status_code=status_code)
         except ValidationError as ex:
+            self.logger and self.logger.exception("Validation failed", ex)
             return self.respond(
                 status_code=400,
                 data={"error": str(ex)},
             )
         except NotAuthorizedError as ex:
+            self.logger and self.logger.exception("Unauthorized", ex)
             return HttpResponse(status_code=403, data={"error": "Not authorized"})
         except Exception as ex:
-            print(ex)
+            self.logger and self.logger.exception("Handled Exception", ex)
             return self.respond(
                 status_code=500,
                 data={"error": "We hit a snag processing your request."},
@@ -64,6 +69,7 @@ class HttpRequest(ABC):
 
 @dataclass
 class AwsLambdaApiHandler(HttpRequest):
+    logger: Logger = None
     middleware: List[Step] = None
     validation_schema: dict = None
     clean_response: Callable[[Any], Any] = None

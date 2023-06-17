@@ -3,6 +3,7 @@ from typing import Any, Callable, List
 from flowfast.step import Step
 
 from cloudly.http.request import AwsLambdaApiHandler
+from cloudly.logging.logger import Logger
 
 
 def http_api(
@@ -11,7 +12,8 @@ def http_api(
     status=200,
     clean_response: Callable[[Any], Any] = None,
     allow_groups: list = None,
-    deny_groups: list = None
+    deny_groups: list = None,
+    logger: Logger = None
 ):
     def wrapper(func) -> Any:
         @wraps(func)
@@ -24,6 +26,7 @@ def http_api(
                 clean_response=clean_response,
                 allow_groups=allow_groups,
                 deny_groups=deny_groups,
+                logger=logger,
             ).dispatch(status)
 
         return decoration

@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-import logging
-
-from cloudly.logging.logger import DynamoTableHandler, Logger
+from cloudly.logging.logger import Logger
 
 
 @dataclass
@@ -15,12 +13,7 @@ class FakeTable:
 
 def test_logger():
     table = FakeTable()
-    _logger = logging.getLogger(__name__)
-    handler = DynamoTableHandler("GoodStuff", table)
-    _logger.setLevel(logging.INFO)
-    _logger.addHandler(handler)
-
-    logger = Logger(_logger)
+    logger = Logger.createLogger(__name__, "APP-01", table)
     logger.info("Testing my shit!", metric={"orders": 1})
 
     logger.warn("This can be a problem")
