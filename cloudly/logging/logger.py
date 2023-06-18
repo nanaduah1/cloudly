@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from logging import Handler, LogRecord
 import logging
 from typing import Any
@@ -14,7 +15,7 @@ class DynamoTableHandler(Handler):
         try:
             msg = self.format(record)
             log = {
-                "timestamp": record.created,
+                "timestamp": Decimal(record.created),
                 "clientId": self.client_id,
                 "eventType": record.eventType,
                 "detail": msg,
@@ -31,6 +32,8 @@ class DynamoTableHandler(Handler):
 
             if getattr(record, "metric", None):
                 log["metric"] = record.metric
+                if isinstance(record.metric, float):
+                    log["metric"] = Decimal(record.metric)
 
             self.database_table.put_item(
                 Item={
