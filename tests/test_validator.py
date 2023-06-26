@@ -1,3 +1,4 @@
+from decimal import Decimal
 import pytest
 from cloudly.http.validators import (
     DecimalNumber,
@@ -51,15 +52,16 @@ def test_decimal_validator_with_invalid_number():
 
 def test_decimal_validator_with_number():
     tested = DecimalNumber("dn")
-    response = tested.validate("10.00")
-    assert response is None
+    v, error = tested.validate("10.00")
+    assert error is None
+    assert isinstance(v, Decimal)
 
 
 def test_decimal_validator_with_excess_decimal_places():
     tested = DecimalNumber("dn")
-    response = tested.validate("10.0099")
-    assert response is not None
-    assert "decimal places" in response
+    value, error = tested.validate("10.0099")
+    assert error is not None
+    assert "decimal places" in error
 
 
 def test_string_field():
@@ -130,3 +132,15 @@ def test_item_schema_validates():
 
     with pytest.raises(ValidationError):
         Validator(schema).validate({"name": "Yellow", "options": [{}]})
+
+
+def test_validator_cleans_value():
+    schema = {
+        "amount": DecimalNumber("amount"),
+        "payer": {"age": IntegerNumber("age")},
+    }
+
+    response = Validator(schema).validate({"amount": 10.99, "payer": {"age": "10"}})
+
+    assert response["amount"] == Decimal("10.99")
+    assert response["payer"]["age"] == 10

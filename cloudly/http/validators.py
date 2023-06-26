@@ -13,11 +13,14 @@ class Rule(ABC):
     field_name: str = None
 
     @abstractmethod
-    def validate(self, value: Any, raw_data: dict = None) -> str:
+    def validate(self, value: Any, raw_data: dict = None) -> Tuple[Any, str]:
         pass
 
-    def error(self, message) -> str:
-        return f"{self.field_name}: {message}"
+    def error(self, message):
+        return None, f"{self.field_name}: {message}"
+
+    def valid(self, cleaned_value):
+        return cleaned_value, None
 
 
 @dataclass
@@ -34,6 +37,7 @@ class Validator:
     def _run_validators(self, data: dict, schema: dict) -> Tuple[dict, List[str]]:
         errors = []
         input_data = data or {}
+        cleaned_data = {**input_data}
         for field, validator in schema.items():
             if not validator:
                 continue
@@ -46,23 +50,26 @@ class Validator:
                     data=value,
                 )
                 errors += inner_errors
-                input_data[field] = cleaned_value
+                cleaned_data[field] = cleaned_value if cleaned_value else value
             else:
                 field_validators = validator
                 if issubclass(field_validators.__class__, Rule):
                     field_validators = [validator]
 
-                errors += [
-                    e for e in (v.validate(value) for v in field_validators) if e
-                ]
+                for f_validator in field_validators:
+                    cleaned_value, error = f_validator.validate(value)
+                    if error:
+                        errors.append(error)
+                    cleaned_data[field] = cleaned_value if cleaned_value else value
 
-        return input_data, errors
+        return cleaned_data, errors
 
 
 class Required(Rule):
     def validate(self, value: Any, **kwargs) -> str:
-        if not value:
-            return self.error("value is required")
+        if value:
+            return self.valid(value)
+        return self.error("value is required")
 
 
 @dataclass
@@ -72,6 +79,7 @@ class MinLength(Rule):
     def validate(self, value: Any, **kwargs) -> str:
         if self.min and isinstance(value.__class__, str) and len(value) < self.min:
             return self.error(f"must be at least {self.min}")
+        return self.valid(value)
 
 
 @dataclass
@@ -81,6 +89,7 @@ class MaxLength(Rule):
     def validate(self, value: Any, **kwargs) -> str:
         if self.max and isinstance(value.__class__, str) and len(value) > self.max:
             return self.error(f"must be at most {self.max}")
+        return self.valid(value)
 
 
 class Email(Rule):
@@ -98,7 +107,7 @@ class DecimalNumber(Rule):
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
         try:
-            cleaned_value = Decimal(value)
+            cleaned_value = Decimal(str(value))
 
             if "." in str(cleaned_value):
                 _, point = str(cleaned_value).split(".")
@@ -110,6 +119,8 @@ class DecimalNumber(Rule):
 
             if self.min and cleaned_value < Decimal(self.min):
                 return self.error(f"cannot be less than {self.min}")
+
+            return self.valid(cleaned_value)
 
         except Exception:
             return self.error("must be a decimal")
@@ -128,6 +139,7 @@ class IntegerNumber(Rule):
             if self.max and cleaned_value > self.max:
                 return self.error(f"cannot be more than {self.max}")
 
+            return self.valid(cleaned_value)
         except Exception:
             return self.error(f"must be an integer between {self.min} and {self.max}")
 
@@ -141,6 +153,8 @@ class RegexValidator(Rule):
             regex = re.compile(self.pattern)
             if not regex.match(value):
                 return self.error(f"does not match the pattern {self.pattern}")
+
+            return self.valid(value)
         except Exception:
             return self.error(f"does not match the pattern {self.pattern}")
 
@@ -152,6 +166,8 @@ class OptionsValidator(Rule):
     def validate(self, value: Any, raw_data: dict = None) -> str:
         if value and not value in self.options:
             return self.error(f"must be one of [{', '.join(self.options)}]")
+
+        return self.valid(value)
 
 
 def int_field(name: str, min: int = None, max: int = None, required=False):
@@ -218,8 +234,9 @@ class ListFieldValidator(Rule):
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
         cleaned_value = value or []
+
         if not isinstance(cleaned_value, Iterable):
-            return
+            return self.error("Must be an iterable")
 
         items_count = len(cleaned_value)
         if self.min_items and self.min_items > 0 and items_count < self.min_items:
@@ -229,12 +246,16 @@ class ListFieldValidator(Rule):
             return self.error(f"must have at most {self.max_items} items")
 
         if not self.item_schema or not isinstance(self.item_schema, dict):
-            return
+            return self.valid(value)
 
         item_validator = Validator(self.item_schema)
+        cleaned_list = list(cleaned_value)
         try:
             for index, item in enumerate(cleaned_value):
-                item_validator.validate(item)
+                cv = item_validator.validate(item)
+                cleaned_list[index] = cv
+
+            return self.valid(cleaned_list)
         except ValidationError as ex:
             return self.error(f"[{index}]: {str(ex)}")
 
