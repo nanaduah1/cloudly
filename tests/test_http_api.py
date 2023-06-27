@@ -106,7 +106,7 @@ def test_http_api_with_validator_task():
         pass
 
     tested = handler
-    response = tested({"body": json.dumps({})}, {})
+    response = tested({"body": json.dumps({"age": "c"})}, {})
     assert response["statusCode"] == 400
 
 

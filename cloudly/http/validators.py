@@ -77,7 +77,12 @@ class MinLength(Rule):
     min: int = 0
 
     def validate(self, value: Any, **kwargs) -> str:
-        if self.min and isinstance(value.__class__, str) and len(value) < self.min:
+        if (
+            value
+            and self.min
+            and isinstance(value.__class__, str)
+            and len(value) < self.min
+        ):
             return self.error(f"must be at least {self.min}")
         return self.valid(value)
 
@@ -87,7 +92,12 @@ class MaxLength(Rule):
     max: int = None
 
     def validate(self, value: Any, **kwargs) -> str:
-        if self.max and isinstance(value.__class__, str) and len(value) > self.max:
+        if (
+            value
+            and self.max
+            and isinstance(value.__class__, str)
+            and len(value) > self.max
+        ):
             return self.error(f"must be at most {self.max}")
         return self.valid(value)
 
@@ -96,6 +106,9 @@ class Email(Rule):
     pattern = r"^\S+@\S+\.\S+$"
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.valid(value)
+
         return RegexValidator(self.field_name, self.pattern).validate(value)
 
 
@@ -106,6 +119,8 @@ class DecimalNumber(Rule):
     max: str = None
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.valid(value)
         try:
             cleaned_value = Decimal(str(value))
 
@@ -132,6 +147,8 @@ class IntegerNumber(Rule):
     min: Optional[int] = None
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.valid(value)
         try:
             cleaned_value = int(value)
             if self.min and cleaned_value < self.min:
@@ -149,6 +166,8 @@ class RegexValidator(Rule):
     pattern: str = "*"
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.valid(value)
         try:
             regex = re.compile(self.pattern)
             if not regex.match(value):
