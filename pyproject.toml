@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloudly"
-version = "1.2.4"
+version = "1.2.5"
 description = ""
 authors = ["Nana Duah <gabano2005@gmail.com>"]
 readme = "README.md"
@@ -8,7 +8,7 @@ packages = [{include = "cloudly"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-flowfast = {git = "https://github.com/nanaduah1/flowfast.git", rev = "79ae682505860188bb2112e93d384ff24144f802"}
+flowfast = {git = "https://github.com/nanaduah1/flowfast.git"}
 
 
 [tool.poetry.group.dev.dependencies]

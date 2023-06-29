@@ -40,7 +40,7 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/nanaduah1/flowfast.git"
-reference = "79ae682505860188bb2112e93d384ff24144f802"
+reference = "HEAD"
 resolved_reference = "79ae682505860188bb2112e93d384ff24144f802"
 
 [[package]]
@@ -121,4 +121,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "d5f39bf6179ee50797ebf8ae2010eaeb3bcedd1e25a103141e3ced31b282221d"
+content-hash = "4330ff1cf4820b1e1183320547be379964f0597906875cf8d5879feec326a30d"
