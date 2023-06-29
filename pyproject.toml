@@ -8,7 +8,7 @@ packages = [{include = "cloudly"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-flowfast = {git = "https://github.com/nanaduah1/flowfast.git"}
+flowfast = {git = "https://github.com/nanaduah1/flowfast.git", rev = "0.0.5"}
 
 
 [tool.poetry.group.dev.dependencies]
