@@ -283,9 +283,9 @@ def list_field(
     name: str, min_items=None, max_items=None, required=False, item_schema: dict = None
 ):
     validators = []
-
-    validators.append(ListFieldValidator(name, item_schema, min_items, max_items))
     if required:
         validators.append(Required(name))
+
+    validators.append(ListFieldValidator(name, item_schema, min_items, max_items))
 
     return validators

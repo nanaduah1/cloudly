@@ -6,6 +6,7 @@ from cloudly.http.validators import (
     Required,
     ValidationError,
     Validator,
+    decimal_field,
     list_field,
     string_field,
 )
@@ -132,6 +133,30 @@ def test_item_schema_validates():
 
     with pytest.raises(ValidationError):
         Validator(schema).validate({"name": "Yellow", "options": [{}]})
+
+
+def test_item_schema_validation_cleans_values():
+    schema = {
+        "options": list_field(
+            "options",
+            item_schema={
+                "price": decimal_field("options.price", required=True),
+                "sls": list_field(
+                    "options.sls",
+                    required=True,
+                    item_schema={
+                        "size": decimal_field("options.sls.size", required=True)
+                    },
+                ),
+            },
+        ),
+    }
+
+    response = Validator(schema).validate(
+        {"options": [{"price": "10.00", "sls": [{"size": "2.00"}]}]}
+    )
+    assert response["options"][0]["price"] == Decimal("10.00")
+    assert response["options"][0]["sls"][0]["size"] == Decimal("2.00")
 
 
 def test_validator_cleans_value():
