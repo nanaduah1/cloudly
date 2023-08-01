@@ -39,10 +39,14 @@ class HttpRequest(ABC):
                 data={"error": str(ex)},
             )
         except NotAuthorizedError as ex:
-            self.logger and self.logger.exception("Unauthorized", ex)
+            if self.logger:
+                self.logger.exception("Unauthorized", ex)
             return HttpResponse(status_code=403, data={"error": "Not authorized"})
         except Exception as ex:
-            self.logger and self.logger.exception("Handled Exception", ex)
+            if self.logger:
+                self.logger.exception("Handled Exception", ex)
+            else:
+                print(ex)
             return self.respond(
                 status_code=500,
                 data={"error": "We hit a snag processing your request."},
