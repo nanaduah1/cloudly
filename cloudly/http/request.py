@@ -11,8 +11,6 @@ from cloudly.http.security import user_groups
 from cloudly.http.validators import ValidationError, Validator
 from cloudly.http.response import HttpResponse
 
-from typing import List
-
 from cloudly.logging.logger import Logger
 
 
@@ -39,18 +37,26 @@ class HttpRequest(ABC):
                 data={"error": str(ex)},
             )
         except NotAuthorizedError as ex:
-            if self.logger:
-                self.logger.exception("Unauthorized", ex)
+            extra = {
+                "event": self.event,
+                "Allow": self.allow_groups,
+                "Deny": self.deny_groups,
+            }
+            self._log_error("Not authorized", ex, extra)
             return HttpResponse(status_code=403, data={"error": "Not authorized"})
         except Exception as ex:
-            if self.logger:
-                self.logger.exception("Handled Exception", ex)
-            else:
-                print(ex)
+            extra = {"event": self.event}
+            self._log_error("Not authorized", ex, extra)
             return self.respond(
                 status_code=500,
                 data={"error": "We hit a snag processing your request."},
             )
+
+    def _log_error(self, title: str, ex: Exception, extra: dict = None):
+        if self.logger:
+            self.logger.exception(title, ex)
+        else:
+            print(ex, "Context:", extra or {})
 
     @abstractmethod
     def validate(self, data: dict) -> dict:
