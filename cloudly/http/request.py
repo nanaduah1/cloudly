@@ -46,17 +46,16 @@ class HttpRequest(ABC):
             return HttpResponse(status_code=403, data={"error": "Not authorized"})
         except Exception as ex:
             extra = {"event": self.event}
-            self._log_error("Not authorized", ex, extra)
+            self._log_error("Request failed due to exception", ex, extra)
             return self.respond(
                 status_code=500,
                 data={"error": "We hit a snag processing your request."},
             )
 
     def _log_error(self, title: str, ex: Exception, extra: dict = None):
+        print(title, " EXCEPTION: ", ex, "Context:", extra or {})
         if self.logger:
             self.logger.exception(title, ex)
-        else:
-            print(ex, "Context:", extra or {})
 
     @abstractmethod
     def validate(self, data: dict) -> dict:
