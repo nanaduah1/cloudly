@@ -195,6 +195,10 @@ class BooleanValidator(Rule):
     default: bool = None
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.error("Value is required")
+        if type(value) != bool:
+            return self.error("Boolean is required")
         return self.valid(value)
 
 
