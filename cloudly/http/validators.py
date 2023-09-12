@@ -192,11 +192,11 @@ class OptionsValidator(Rule):
 
 @dataclass
 class BooleanValidator(Rule):
-    default: bool = None
+    default_value: bool = None
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
         if not value:
-            return self.error("Value is required")
+            return self.valid(self.default_value)
         if type(value) != bool:
             return self.error("Boolean is required")
         return self.valid(value)
@@ -222,11 +222,11 @@ def decimal_field(
     return validators
 
 
-def boolean_field(name: str, required=False, default: bool = False):
+def boolean_field(name: str, required=False, default_value: bool = False):
     validators = []
     if required is True:
         validators.append(Required(name))
-    validators.append(BooleanValidator(name, default))
+    validators.append(BooleanValidator(name, default_value))
 
     return validators
 

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import datetime
 import pytest
 from cloudly.http.validators import (
     DecimalNumber,
@@ -9,6 +10,8 @@ from cloudly.http.validators import (
     decimal_field,
     list_field,
     string_field,
+    BooleanValidator,
+    boolean_field
 )
 
 
@@ -33,16 +36,57 @@ def test_single_field_schema_with_valid_value():
 
 
 def test_single_field_schema_with_inner_missing_value():
-    validator = Validator({"fn": Required("fn"), "inner": {"ln": Required("ln")}})
+    validator = Validator(
+        {"fn": Required("fn"), "inner": {"ln": Required("ln")}})
 
     with pytest.raises(ValidationError):
         validator.validate({"fn": "ayw", "inner": {}})
 
 
 def test_single_field_schema_with_inner_valid_value():
-    validator = Validator({"fn": Required("fn"), "inner": {"ln": Required("ln")}})
+    validator = Validator(
+        {"fn": Required("fn"), "inner": {"ln": Required("ln")}})
     cleaned = validator.validate({"fn": "ayw", "inner": {"ln": "tc"}})
     assert cleaned["inner"]["ln"] == "tc"
+
+
+def test_boolean_validator_with_string():
+    tested = BooleanValidator("is_true", True)
+    response = tested.validate("false")
+    assert response is not None
+
+
+def test_boolean_validator_with_number():
+    tested = BooleanValidator("is_true", True)
+    v, error = tested.validate(10)
+    assert "required" in error
+
+
+def test_boolean_validator_with_datetime():
+    tested = BooleanValidator("is_true", True)
+    v, error = tested.validate(datetime.now())
+    assert "required" in error
+
+
+def test_boolean_validator_with_True():
+    tested = BooleanValidator("is_true", True)
+    v, error = tested.validate(True)
+    assert error is None
+    assert isinstance(v, bool)
+
+
+def test_boolean_validator_with_False():
+    tested = BooleanValidator("is_true", True)
+    v, error = tested.validate(False)
+    assert error is None
+    assert isinstance(v, bool)
+
+
+def test_boolean_validator_with_None():
+    tested = BooleanValidator("is_true", True)
+    v, error = tested.validate(None)
+    assert error is None
+    assert isinstance(v, bool)
 
 
 def test_decimal_validator_with_invalid_number():
@@ -165,7 +209,8 @@ def test_validator_cleans_value():
         "payer": {"age": IntegerNumber("age")},
     }
 
-    response = Validator(schema).validate({"amount": 10.99, "payer": {"age": "10"}})
+    response = Validator(schema).validate(
+        {"amount": 10.99, "payer": {"age": "10"}})
 
     assert response["amount"] == Decimal("10.99")
     assert response["payer"]["age"] == 10
