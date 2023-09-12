@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import datetime
 import pytest
 from cloudly.http.validators import (
     DecimalNumber,
@@ -9,6 +10,7 @@ from cloudly.http.validators import (
     decimal_field,
     list_field,
     string_field,
+    boolean_field,
 )
 
 
@@ -43,6 +45,63 @@ def test_single_field_schema_with_inner_valid_value():
     validator = Validator({"fn": Required("fn"), "inner": {"ln": Required("ln")}})
     cleaned = validator.validate({"fn": "ayw", "inner": {"ln": "tc"}})
     assert cleaned["inner"]["ln"] == "tc"
+
+
+def test_boolean_validator_with_string():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    with pytest.raises(ValidationError):
+        tested.validate({" is_true": "false"})
+
+
+def test_boolean_validator_with_number():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    with pytest.raises(ValidationError):
+        tested.validate({" is_true": 10})
+
+
+def test_boolean_validator_with_datetime():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    with pytest.raises(ValidationError):
+        tested.validate({" is_true": datetime.now()})
+
+
+def test_boolean_validator_with_True():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    res = tested.validate({"is_true": True})
+    assert res["is_true"] is True
+
+
+def test_boolean_validator_with_False():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    res = tested.validate({"is_true": False})
+    assert res["is_true"] is False
+
+
+def test_boolean_validator_with_None():
+    schema = {"is_true": boolean_field("is_true", required=True)}
+    tested = Validator(schema)
+
+    with pytest.raises(ValidationError):
+        tested.validate({" is_true": None})
+
+
+def test_optional_boolean_validator_with_None():
+    schema = {"is_true": boolean_field("is_true")}
+    tested = Validator(schema)
+
+    res = tested.validate({"is_true": None})
+    print(res)
+    assert res["is_true"] is None
 
 
 def test_decimal_validator_with_invalid_number():
