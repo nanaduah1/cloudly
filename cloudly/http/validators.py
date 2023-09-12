@@ -29,7 +29,8 @@ class Validator:
 
     def validate(self, data: dict):
         input = {**data}
-        cleaned_data, errors = self._run_validators(data=input, schema=self.schema)
+        cleaned_data, errors = self._run_validators(
+            data=input, schema=self.schema)
         if errors:
             raise ValidationError(",".join(errors))
         return cleaned_data
@@ -189,6 +190,14 @@ class OptionsValidator(Rule):
         return self.valid(value)
 
 
+@dataclass
+class BooleanValidator(Rule):
+    default: bool = None
+
+    def validate(self, value: Any, raw_data: dict = None) -> str:
+        return self.valid(value)
+
+
 def int_field(name: str, min: int = None, max: int = None, required=False):
     validators = []
     if required is True:
@@ -205,6 +214,15 @@ def decimal_field(
     if required is True:
         validators.append(Required(name))
     validators.append(DecimalNumber(name, decimal_places, min, max))
+
+    return validators
+
+
+def boolean_field(name: str, required=False, default: bool = False):
+    validators = []
+    if required is True:
+        validators.append(Required(name))
+    validators.append(BooleanValidator(name, default))
 
     return validators
 
@@ -286,6 +304,7 @@ def list_field(
     if required:
         validators.append(Required(name))
 
-    validators.append(ListFieldValidator(name, item_schema, min_items, max_items))
+    validators.append(ListFieldValidator(
+        name, item_schema, min_items, max_items))
 
     return validators
