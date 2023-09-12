@@ -29,8 +29,7 @@ class Validator:
 
     def validate(self, data: dict):
         input = {**data}
-        cleaned_data, errors = self._run_validators(
-            data=input, schema=self.schema)
+        cleaned_data, errors = self._run_validators(data=input, schema=self.schema)
         if errors:
             raise ValidationError(",".join(errors))
         return cleaned_data
@@ -39,11 +38,11 @@ class Validator:
         errors = []
         input_data = data or {}
         cleaned_data = {**input_data}
-        for field, validator in schema.items():
+        for v_field, validator in schema.items():
             if not validator:
                 continue
 
-            value = input_data.get(field)
+            value = input_data.get(v_field)
 
             if isinstance(validator, dict):
                 cleaned_value, inner_errors = self._run_validators(
@@ -51,7 +50,7 @@ class Validator:
                     data=value,
                 )
                 errors += inner_errors
-                cleaned_data[field] = cleaned_value if cleaned_value else value
+                cleaned_data[v_field] = cleaned_value if cleaned_value else value
             else:
                 field_validators = validator
                 if issubclass(field_validators.__class__, Rule):
@@ -61,14 +60,14 @@ class Validator:
                     cleaned_value, error = f_validator.validate(value)
                     if error:
                         errors.append(error)
-                    cleaned_data[field] = cleaned_value if cleaned_value else value
+                    cleaned_data[v_field] = cleaned_value if cleaned_value else value
 
         return cleaned_data, errors
 
 
 class Required(Rule):
     def validate(self, value: Any, **kwargs) -> str:
-        if value:
+        if value or value is False:
             return self.valid(value)
         return self.error("value is required")
 
@@ -184,7 +183,7 @@ class OptionsValidator(Rule):
     options: Iterable[Any] = field(default_factory=tuple)
 
     def validate(self, value: Any, raw_data: dict = None) -> str:
-        if value and not value in self.options:
+        if value and value not in self.options:
             return self.error(f"must be one of [{', '.join(self.options)}]")
 
         return self.valid(value)
@@ -194,12 +193,22 @@ class OptionsValidator(Rule):
 class BooleanValidator(Rule):
     default_value: bool = None
 
-    def validate(self, value: Any, raw_data: dict = None) -> str:
-        if not value:
-            return self.valid(self.default_value)
-        if type(value) != bool:
-            return self.error("Boolean is required")
-        return self.valid(value)
+    def validate(self, value: Any, raw_data: dict = None) -> Tuple[Any, str]:
+        """
+        There can be only 3 values for a boolean field:
+        1. True
+        2. False
+        3. None
+
+        We are allowing None to be a valid value for a boolean
+        field because a filed can be optional.
+        """
+
+        if value not in (True, False, None):
+            return self.error("must be a boolean")
+
+        cleaned_value = value if value is not None else self.default_value
+        return self.valid(cleaned_value)
 
 
 def int_field(name: str, min: int = None, max: int = None, required=False):
@@ -222,7 +231,7 @@ def decimal_field(
     return validators
 
 
-def boolean_field(name: str, required=False, default_value: bool = False):
+def boolean_field(name: str, required=False, default_value: Optional[bool] = None):
     validators = []
     if required is True:
         validators.append(Required(name))
@@ -308,7 +317,6 @@ def list_field(
     if required:
         validators.append(Required(name))
 
-    validators.append(ListFieldValidator(
-        name, item_schema, min_items, max_items))
+    validators.append(ListFieldValidator(name, item_schema, min_items, max_items))
 
     return validators
