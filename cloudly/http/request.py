@@ -53,7 +53,8 @@ class HttpRequest(ABC):
             )
 
     def _log_error(self, title: str, ex: Exception, extra: dict = None):
-        print(title, " EXCEPTION: ", ex, "Context:", extra or {})
+        print(title, ex, "Context:")
+        print("Context:", extra or {})
         if self.logger:
             self.logger.exception(title, ex)
 
