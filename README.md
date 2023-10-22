@@ -1,15 +1,25 @@
-# Cloudly
+# Version 2.0.0
 
-This repository contains http request utilities and classes to simplify writing python based http API
-on AWS.
+The original version of the library was written to wrap some of the repetitive tasks I was doing
+when writing python based lambda functions and API Gateway endpoints. It was also a way to learn.
 
-These are designed to suit my current needs and there are not guaranteed to work for you.
-Please use it at your own risk. I'm not responsible nor provide any guarantees that this is bug free and safe for your own use cases!
+This version builds on the original version and adds some new features and changes some of the old ones.
+Below are some of the goals of this version:
+
+1.  Make it easier to write lambda functions and API Gateway endpoints using python. Ideally, validation of the request, parsing of the request, and response handling should be as easy as possible.
+
+2.  Make it possible to run the same code locally and in the cloud. This means that the code should be able to run in a lambda function and also in a local environment. This is important for testing and debugging.
+
+## Stretch goals
+
+3.  Ability to generate CDK code for the lambda functions and API Gateway endpoints. This is important for infrastructure as code.
+
+4.  Ability to generate OpenAPI documentation for the API Gateway endpoints. This is important for API documentation.
 
 ## Getting started
 
 1. Install the library in your project
 
-    ```bash
-    poetry add git+https://github.com/nanaduah1/cloudly.git@1.1.7
-    ```
+   ```bash
+   poetry add git+https://github.com/nanaduah1/cloudly.git@1.1.7
+   ```
