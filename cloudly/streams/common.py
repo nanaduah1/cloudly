@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Type
 from flowfast.step import Task, Mapping
+from flowfast.workflow import Workflow
 from flowfast.base import Step
 from cloudly.logging.logger import Logger
 from cloudly.config.client import ConfigClient
@@ -147,3 +148,39 @@ class ParseDynamoJson(Task):
 
     def process(self, input: Mapping) -> Mapping:
         return Change.from_stream(input, self.normalizer)
+
+
+class StreamProcessor:
+    """
+    This class is used to process events from DynamoDB streams.
+    It will read the events from the stream and execute the processors
+    that are registered for the given event.
+    """
+
+    processor_classes: Iterable[Type[DbStreamProcessor]]
+    database_table: Any
+    logger: Logger
+    config: ConfigClient
+    normalizer: Callable[[dict], dict]
+
+    def run(self, event: dict):
+        records = event.get("Records", [])
+
+        if not records:
+            self.logger.warn("Stream processor called with no records to process")
+            return
+
+        steps = tuple(
+            cls(self.database_table, self.logger, self.config)
+            for cls in self.processor_classes
+        )
+
+        pipeline = Workflow(ParseDynamoJson(self.normalizer))
+        for step in steps:
+            pipeline = pipeline.next(step)
+
+        try:
+            _ = tuple(Workflow.for_each(pipeline).run(records))
+        except Exception as ex:
+            self.logger.exception("DB Stream processing failed!", ex)
+            raise
