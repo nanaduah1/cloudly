@@ -5,7 +5,7 @@ from typing import Any, Callable, Iterable, List
 from flowfast.base import Step
 from flowfast.workflow import Workflow
 from cloudly.http.context import RequestContext
-from cloudly.http.exceptions import NotAuthorizedError
+from cloudly.http.exceptions import NotAuthorizedError, HttpResponseError
 from cloudly.http.security import user_groups
 
 from cloudly.http.validators import ValidationError, Validator
@@ -44,6 +44,17 @@ class HttpRequest(ABC):
             }
             self._log_error("Not authorized", ex, extra)
             return HttpResponse(status_code=403, data={"error": "Not authorized"})
+        except HttpResponseError as ex:
+            extra = {
+                "event": self.event,
+                "status_code": ex.status_code,
+                "data": ex.data,
+            }
+            self._log_error("Request failed", ex, extra)
+            return self.respond(
+                status_code=ex.status_code,
+                data=ex.data,
+            )
         except Exception as ex:
             extra = {"event": self.event}
             self._log_error("Request failed due to exception", ex, extra)
