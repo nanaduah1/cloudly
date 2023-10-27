@@ -150,6 +150,7 @@ class ParseDynamoJson(Task):
         return Change.from_stream(input, self.normalizer)
 
 
+@dataclass
 class StreamProcessor:
     """
     This class is used to process events from DynamoDB streams.
