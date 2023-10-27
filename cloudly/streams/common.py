@@ -137,6 +137,7 @@ class DbStreamProcessor(Step[Change, Change], ABC):
         return change
 
 
+@dataclass
 class ParseDynamoJson(Task):
     """
     Parse the DynamoDB JSON format into a Change object
