@@ -71,13 +71,15 @@ class Request(object):
     def body(self) -> str:
         return self._event_data.get("body", "")
 
+    def set(self, key: str, value: Any):
+        setattr(self, key, value)
 
-class HttpApi(object):
-    def __call__(self, event: dict, context):
-        return self.dispatch(event, context)
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
 
-    def dispatch(self, event: dict, context: Any):
-        request = Request(event)
+
+class RequestDispatcher(object):
+    def dispatch(self, request: Request, context: Any):
         method = request.method.lower()
         path_parameters = request.pathParameters
         if hasattr(self, method):
@@ -88,12 +90,12 @@ class HttpApi(object):
             constant_args = ("self", "request")
             handler_args = (a for a in arg_names if a not in constant_args)
 
-            # Filter out arguments that are not in the request
+            # Extract only the parameters the handler needs
             actual_args = {
                 k: v for k, v in path_parameters.items() if k in handler_args
             }
             try:
-                return self._respond(handler(request, **actual_args))
+                return self.respond(handler(request, **actual_args))
             except HttpError as e:
                 return HttpErrorResponse(e).serialize()
             except Exception as e:
@@ -102,7 +104,9 @@ class HttpApi(object):
             error = HttpError(501, "Method not implemented")
             return HttpErrorResponse(error).serialize()
 
-    def _respond(self, response: Union[Response, dict, str]):
+
+class ResponseMixin(object):
+    def respond(self, response: Union[Response, dict, str, int, float, bool, bytes]):
         if isinstance(response, Response):
             return response.serialize()
         elif isinstance(response, dict):
@@ -115,3 +119,21 @@ class HttpApi(object):
                     type(response)
                 )
             )
+
+
+class MiddlewareMixin(object):
+    def __init__(self, *args, **kwargs):
+        self.middleware = [cls() for cls in getattr(self, "middleware", [])]
+        super().__init__(*args, **kwargs)
+
+    def dispatch(self, event: dict, context: Any):
+        request = Request(event)
+        for middleware in self.middleware:
+            if hasattr(middleware, "request"):
+                middleware.request(request)
+        return super().dispatch(request, context)
+
+
+class HttpApi(MiddlewareMixin, RequestDispatcher, ResponseMixin):
+    def __call__(self, event: dict, context):
+        return self.dispatch(event, context)
