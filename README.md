@@ -24,36 +24,6 @@ Below are some of the goals of this version:
    poetry add git+https://github.com/nanaduah1/cloudly.git@version
    ```
 
-# Example usage (functional style)
-
-```python
-from cloudly.http import Request, Response
-from cloudly.http.decorators import http_api
-
-
-@http_api()
-def handler(request: Request):
-    return Response(body={"message": "Hello world!"})
-
-@http_post()
-def handler(request: Request):
-   data = request.json() # returns a dict
-   query_params = request.query_params # returns a dict
-   body = request.body # returns a string
-   headers = request.headers # returns a dict
-   user = request.user # returns a dict
-   return Response(body={"message": "Hello world!"})
-
-@http_get()
-def handler(request: Request):
-   data = request.json() # returns a dict
-   query_params = request.query_params # returns a dict
-   body = request.body # returns a string
-   headers = request.headers # returns a dict
-   user = request.user # returns a dict
-   return Response(body={"message": "Hello world!"})
-```
-
 # Example usage (class style)
 
 ```python
