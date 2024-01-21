@@ -39,3 +39,17 @@ def test_custom_validation_called():
     user = User(name="test")
     assert user.is_valid() is False
     assert str(user.error) == "name: must not be test"
+
+
+def test_validate_method_called():
+    class User(schema.Schema):
+        name = schema.StringField(required=True, max_length=10, min_length=5)
+
+        def validate(self, data):
+            if data["name"] == "test":
+                raise schema.ValidationError("must not be test")
+            return data
+
+    user = User(name="test")
+    assert user.is_valid() is False
+    assert str(user.error) == "must not be test"

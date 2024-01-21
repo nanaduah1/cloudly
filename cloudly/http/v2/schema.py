@@ -139,6 +139,10 @@ class _ValidatorMixin(object):
         validator = Validator(schema)
         try:
             self.cleaned_data = validator.validate(data)
+            validated_data = self.validate(self.cleaned_data)
+            if validated_data is None:
+                raise Exception("validate method must return data")
+            self.cleaned_data = validated_data
         except ValidationError as error:
             self.error = error
             return False
@@ -146,6 +150,9 @@ class _ValidatorMixin(object):
             self.error = error
             return False
         return True
+
+    def validate(self, data):
+        return data
 
 
 class Schema(_ValidatorMixin):
