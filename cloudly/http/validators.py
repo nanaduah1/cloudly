@@ -27,7 +27,7 @@ class Rule(ABC):
 class Validator:
     schema: Dict[str, Union[Rule, Dict[str, Rule]]]
 
-    def validate(self, data: dict):
+    def validate(self, data: dict, rasie_exception: bool = True) -> dict:
         input = {**data}
         cleaned_data, errors = self._run_validators(data=input, schema=self.schema)
         if errors:
@@ -92,12 +92,7 @@ class MaxLength(Rule):
     max: int = None
 
     def validate(self, value: Any, **kwargs) -> str:
-        if (
-            value
-            and self.max
-            and isinstance(value.__class__, str)
-            and len(value) > self.max
-        ):
+        if value and self.max and isinstance(value, str) and len(value) > self.max:
             return self.error(f"must be at most {self.max}")
         return self.valid(value)
 
@@ -109,7 +104,23 @@ class Email(Rule):
         if not value:
             return self.valid(value)
 
-        return RegexValidator(self.field_name, self.pattern).validate(value)
+        error = RegexValidator(self.field_name, self.pattern).validate(value)
+        if error:
+            return self.error("must be at valid email address")
+        return self.valid(value)
+
+
+class Url(Rule):
+    pattern = r"^\S+@\S+\.\S+$"
+
+    def validate(self, value: Any, raw_data: dict = None) -> str:
+        if not value:
+            return self.valid(value)
+
+        error = RegexValidator(self.field_name, self.pattern).validate(value)
+        if error:
+            return self.error("must be at valid email address")
+        return self.valid(value)
 
 
 @dataclass

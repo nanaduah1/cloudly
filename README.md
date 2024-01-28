@@ -21,5 +21,70 @@ Below are some of the goals of this version:
 1. Install the library in your project
 
    ```bash
-   poetry add git+https://github.com/nanaduah1/cloudly.git@1.1.7
+   poetry add git+https://github.com/nanaduah1/cloudly.git@version
    ```
+
+# Example usage (class style)
+
+```python
+from cloudly.http import Request, Response
+from cloudly.http import HttpApi
+
+class Handler(HttpApi):
+    def get(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def post(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def put(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def delete(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def patch(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def head(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+    def options(self, request: Request):
+        return Response(body={"message": "Hello world!"})
+
+handler = Handler()
+```
+
+# Example usage (class style with Model)
+
+```python
+from cloudly.http import Request, Response
+from cloudly.http import HttpApi
+
+class User(Model):
+    name: str
+    age: int
+
+class UserSchema(Schema):
+      name = fields.String(required=True)
+      age = fields.Integer(required=True)
+
+      def validate_age(self, value):
+         if value < 0:
+              raise ValidationError("Age must be greater than 0")
+         return value
+      def validate_name(self, value):
+         if len(value) < 3:
+            raise ValidationError("Name must be at least 3 characters")
+         return value
+
+      def validate(self, data):
+         if data["name"] == "John" and data["age"] < 18:
+            raise ValidationError("John must be at least 18 years old")
+
+
+class Handler(HttpApi):
+   model = User
+   schema = UserSchema
+
+```

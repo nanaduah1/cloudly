@@ -3,3 +3,4 @@ __pycache__
 README.pdf
 DS_Store
 .DS_Store
+.ruff_cache
