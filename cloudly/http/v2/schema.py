@@ -2,6 +2,7 @@ import functools
 from typing import Any, Iterable, Tuple
 from cloudly.http.validators import (
     Validator,
+    Required,
     Rule,
     ValidationError,
     string_field,
@@ -122,6 +123,53 @@ class EmailField(_Field):
         validators = string_field(
             "", required=required, type="email", max=max_length, min=min_length
         )
+        super().__init__(validators)
+
+
+class ObjectField(_Field):
+    def __init__(self, schema, required: bool = False):
+        validators = []
+
+        if required:
+            validators += [Required("")]
+
+        def _validate_object_field(schema_class, value, raw_data=None):
+            if value is None:
+                return value
+
+            schm = schema_class(**value)
+            if not schm.is_valid():
+                raise ValidationError(schm.error)
+            return schm.cleaned_data
+
+        validators += [
+            _CustomValidator(functools.partial(_validate_object_field, schema))
+        ]
+        super().__init__(validators)
+
+
+class ListField(_Field):
+    def __init__(self, schema, required: bool = False):
+        validators = []
+
+        if required:
+            validators += [Required("")]
+
+        def _validate_list_field(schema_class, value, raw_data=None):
+            if value is None:
+                return value
+
+            cleaned_data = []
+            for item in value:
+                schm = schema_class(**item)
+                if not schm.is_valid():
+                    raise ValidationError(schm.error)
+                cleaned_data.append(schm.cleaned_data)
+            return cleaned_data
+
+        validators += [
+            _CustomValidator(functools.partial(_validate_list_field, schema))
+        ]
         super().__init__(validators)
 
 
