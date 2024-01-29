@@ -102,7 +102,7 @@ class RequestDispatcher(object):
                 k: v for k, v in path_parameters.items() if k in handler_args
             }
             try:
-                return self.respond(handler(request, **actual_args))
+                return handler(request, **actual_args)
             except HttpError as e:
                 print(e)
                 return HttpErrorResponse(e).serialize()
@@ -121,7 +121,7 @@ class ResponseMixin(object):
         status_code: int = 200,
         headers: dict = None,
     ):
-        if issubclass(response, (Response, JsonResponse)):
+        if isinstance(response, (Response, JsonResponse)):
             return response.serialize()
         elif isinstance(response, dict):
             return JsonResponse(
