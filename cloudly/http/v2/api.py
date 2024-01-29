@@ -36,7 +36,7 @@ class JsonResponse(Response):
 
 class HttpErrorResponse(Response):
     def __init__(self, error: HttpError):
-        super().__init__(str(error), error.status)
+        super().__init__({"error": str(error)}, error.status)
 
 
 class Request(object):
@@ -50,7 +50,8 @@ class Request(object):
 
     @property
     def method(self):
-        return self._event_data["httpMethod"]
+        request_context = self._event_data["requestContext"]
+        return request_context["http"]["method"]
 
     def json(self) -> dict:
         return json.loads(self._event_data.get("body", "{}"))
@@ -97,8 +98,10 @@ class RequestDispatcher(object):
             try:
                 return self.respond(handler(request, **actual_args))
             except HttpError as e:
+                print(e)
                 return HttpErrorResponse(e).serialize()
             except Exception as e:
+                print(e)
                 return HttpErrorResponse(HttpError(500, str(e))).serialize()
         else:
             error = HttpError(501, "Method not implemented")
