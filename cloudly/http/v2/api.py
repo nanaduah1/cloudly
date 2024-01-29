@@ -45,24 +45,30 @@ class Request(object):
         self.context = RequestContext(data)
 
     @property
+    def version(self):
+        return self._event_data["version"]
+
+    @property
     def headers(self):
         return self._event_data["headers"]
 
     @property
     def method(self):
-        request_context = self._event_data["requestContext"]
-        return request_context["http"]["method"]
+        if self.version == "2.0":
+            return self._event_data["requestContext"]["http"]["method"]
+        else:
+            return self._event_data["httpMethod"]
 
     def json(self) -> dict:
         return json.loads(self._event_data.get("body", "{}"))
 
     @property
     def pathParameters(self) -> dict:
-        return self._event_data.get("pathParameters", {})
+        return self._event_data.get("pathParameters") or {}
 
     @property
     def query(self) -> dict:
-        return self._event_data.get("queryStringParameters", {})
+        return self._event_data.get("queryStringParameters") or {}
 
     @property
     def host(self) -> str:
@@ -109,13 +115,26 @@ class RequestDispatcher(object):
 
 
 class ResponseMixin(object):
-    def respond(self, response: Union[Response, dict, str, int, float, bool, bytes]):
-        if isinstance(response, Response):
+    def respond(
+        self,
+        response: Union[Response, dict, str, int, float, bool, bytes],
+        status_code: int = 200,
+        headers: dict = None,
+    ):
+        if issubclass(response, (Response, JsonResponse)):
             return response.serialize()
         elif isinstance(response, dict):
-            return JsonResponse(response).serialize()
+            return JsonResponse(
+                data=response,
+                status=status_code,
+                headers=headers,
+            ).serialize()
         elif isinstance(response, (str, bytes, int, float, bool)):
-            return Response(response).serialize()
+            return Response(
+                data=response,
+                status=status_code,
+                headers=headers,
+            ).serialize()
         else:
             raise ValueError(
                 "Response must be instance of Response, dict or str, got {}".format(
