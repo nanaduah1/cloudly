@@ -2,6 +2,7 @@ import json
 from typing import Any, Union
 from cloudly.http.context import RequestContext
 from cloudly.http.utils import DecimalEncoder
+from cloudly.logging.logger import Logger
 
 
 class HttpError(Exception):
@@ -101,13 +102,18 @@ class RequestDispatcher(object):
             actual_args = {
                 k: v for k, v in path_parameters.items() if k in handler_args
             }
+
+            def _logexception(e):
+                if self.logger:
+                    self.logger.error(str(e))
+
             try:
                 return handler(request, **actual_args)
             except HttpError as e:
-                print(e)
+                _logexception(e)
                 return HttpErrorResponse(e).serialize()
             except Exception as e:
-                print(e)
+                _logexception(e)
                 return HttpErrorResponse(HttpError(500, str(e))).serialize()
         else:
             error = HttpError(501, "Method not implemented")
@@ -157,5 +163,7 @@ class MiddlewareMixin(object):
 
 
 class HttpApi(MiddlewareMixin, RequestDispatcher, ResponseMixin):
+    logger: Logger = None
+
     def __call__(self, event: dict, context):
         return self.dispatch(event, context)
