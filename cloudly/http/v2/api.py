@@ -47,7 +47,7 @@ class Request(object):
 
     @property
     def version(self):
-        return self._event_data["version"]
+        return self._event_data.get("version")
 
     @property
     def headers(self):
@@ -163,7 +163,9 @@ class MiddlewareMixin(object):
 
 
 class HttpApi(MiddlewareMixin, RequestDispatcher, ResponseMixin):
-    logger: Logger = None
+    def __init__(self, logger: Logger = None):
+        self.logger = logger
+        super().__init__()
 
     def __call__(self, event: dict, context):
         return self.dispatch(event, context)
