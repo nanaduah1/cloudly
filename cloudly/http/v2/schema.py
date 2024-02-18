@@ -50,7 +50,10 @@ class _Field(object):
         owner._schema = schema
 
     def __get__(self, instance, owner):
-        return getattr(instance, self._public_name)
+        cleaned_data = getattr(instance, "cleaned_data", None)
+        if cleaned_data:
+            return cleaned_data.get(self._public_name)
+        raise AttributeError("You must call is_valid() before trying to access values")
 
     def __set__(self, instance, value):
         setattr(instance, self._private_name, value)

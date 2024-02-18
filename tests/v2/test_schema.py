@@ -1,3 +1,4 @@
+import pytest
 from cloudly.http import schema
 
 
@@ -126,3 +127,21 @@ def test_that_we_can_define_schema_with_nested_schema_with_list_with_multiple_va
     user_list = CarSchema(owner=[{"name": "test"}, {"name": "test2"}])
     assert user_list.is_valid() is True
     assert user_list.cleaned_data == {"owner": [{"name": "test"}, {"name": "test2"}]}
+
+
+def test_read_schema_data():
+    class User(schema.Schema):
+        name = schema.StringField(required=True, max_length=10, min_length=5)
+
+    user = User(name="test")
+    with pytest.raises(AttributeError):
+        print(user.name)
+
+
+def test_can_access_values_after_is_valid():
+    class User(schema.Schema):
+        name = schema.StringField(required=True, max_length=10, min_length=5)
+
+    user = User(name="test")
+    user.is_valid()
+    assert user.name == "test"
