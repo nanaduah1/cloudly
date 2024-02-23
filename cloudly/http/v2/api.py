@@ -40,6 +40,14 @@ class HttpErrorResponse(Response):
         super().__init__({"error": str(error)}, error.status)
 
 
+class User:
+    def __init__(self, user: dict):
+        self._user = user
+
+    def __getattr__(self, name):
+        return self._user.get(name)
+
+
 class Request(object):
     def __init__(self, data: dict):
         self._event_data = data
@@ -84,6 +92,10 @@ class Request(object):
 
     def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
+
+    @property
+    def user(self) -> User:
+        return getattr(self, "user", None)
 
 
 class RequestDispatcher(object):
