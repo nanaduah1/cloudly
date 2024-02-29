@@ -1,3 +1,4 @@
+import json
 from cloudly.http import HttpApi, Request
 
 
@@ -14,4 +15,5 @@ def test_middleware_request_is_called():
 
     tested = MiddlewareApi()
     response = tested({"httpMethod": "GET"}, {})
-    assert response["auth"] is True
+    data = json.loads(response["body"])
+    assert data["auth"] is True

@@ -1,4 +1,4 @@
-from cloudly.http import HttpApi
+from cloudly.http import HttpApi, Response, JsonResponse
 
 
 def test_that_request_is_routed_to_get():
@@ -68,7 +68,7 @@ def test_request_with_path_params():
 
     tested = GetApi()
     response = tested({"httpMethod": "GET", "pathParameters": {"id": "123"}}, {})
-    assert response == "123"
+    assert response == Response("123").serialize()
 
 
 def test_that_we_can_return_dict():
@@ -78,7 +78,7 @@ def test_that_we_can_return_dict():
 
     tested = GetApi()
     response = tested({"httpMethod": "GET"}, {})
-    assert response == {"name": "John"}
+    assert response == JsonResponse({"name": "John"}).serialize()
 
 
 def test_that_we_can_return_string():
@@ -88,7 +88,7 @@ def test_that_we_can_return_string():
 
     tested = GetApi()
     response = tested({"httpMethod": "GET"}, {})
-    assert response == "Hello"
+    assert response == Response("Hello").serialize()
 
 
 def test_that_we_can_define_handler_with_arg_and_kwargs():
@@ -99,7 +99,7 @@ def test_that_we_can_define_handler_with_arg_and_kwargs():
 
     tested = GetApi()
     response = tested({"httpMethod": "GET", "pathParameters": {"id": "123"}}, {})
-    assert response == "123"
+    assert response == Response("123").serialize()
 
 
 def test_that_handler_catches_unhandled_exceptions():
