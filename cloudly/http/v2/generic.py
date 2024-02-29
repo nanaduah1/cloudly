@@ -1,4 +1,4 @@
-from cloudly.http.v2.api import HttpApi, Request
+from cloudly.http.v2.api import HttpApi, Request, JsonResponse
 
 
 class CreateModelApi(HttpApi):
@@ -10,10 +10,10 @@ class CreateModelApi(HttpApi):
         if self.schema:
             request_schema = self.schema(**data, request=request)
             if not request_schema.is_valid():
-                return self.respond({"error": request_schema.error}, 400)
+                return JsonResponse({"error": str(request_schema.error)}, 400)
             data = request_schema.cleaned_data
         instance = self.create_instance(request, data)
-        return self.respond(instance.to_dict(), 201)
+        return JsonResponse(instance.to_dict(), 201)
 
     def create_instance(self, request: Request, data: dict):
         return self.model.items.create(**data)
@@ -31,12 +31,12 @@ class ListModelApi(HttpApi):
     def _get_one(self, request: Request, id: str):
         instance = self.get_instance(request, id)
         if not instance:
-            return self.respond({"error": "Not found"}, 404)
-        return self.respond(instance.to_dict())
+            return JsonResponse({"error": "Not found"}, 404)
+        return JsonResponse(instance.to_dict())
 
     def _get_many(self, request: Request):
         instances = self.list(request)
-        return self.respond(
+        return JsonResponse(
             {
                 "data": [i.to_dict() for i in instances],
                 "nextToken": instances.last_evaluated_key,
@@ -66,10 +66,10 @@ class UpdateModelApi(HttpApi):
         if self.schema:
             request_schema = self.schema(**data, request=request)
             if not request_schema.is_valid():
-                return self.respond({"error": request_schema.error}, 400)
+                return JsonResponse({"error": str(request_schema.error)}, 400)
             data = request_schema.cleaned_data
         instance = self.update_instance(request, id, data)
-        return self.respond(instance.to_dict())
+        return JsonResponse(instance.to_dict())
 
     def update_instance(self, request: Request, id: str, data: dict):
         return self.model.items.update(id, **data)
@@ -83,7 +83,7 @@ class DeleteModelApi(HttpApi):
 
     def delete(self, request: Request, id: str):
         self.delete_instance(request, id)
-        return self.respond("", 204)
+        return JsonResponse("", 204)
 
     def delete_instance(self, request: Request, id: str):
         return self.model.items.delete(id=id)

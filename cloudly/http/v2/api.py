@@ -1,6 +1,7 @@
 import json
 from typing import Any, Union
 from cloudly.http.context import RequestContext
+from cloudly.http.exceptions import ValidationError
 from cloudly.http.utils import DecimalEncoder
 from cloudly.logging.logger import Logger
 
@@ -114,10 +115,14 @@ class RequestDispatcher(object):
         actual_args = {k: v for k, v in path_parameters.items() if k in handler_args}
 
         try:
-            return handler(request, **actual_args)
+            response = handler(request, **actual_args)
+            return self._respond(response)
         except HttpError as e:
             self._logexception(e)
             return HttpErrorResponse(e).serialize()
+        except ValidationError as e:
+            self._logexception(e)
+            return HttpErrorResponse(HttpError(400, str(e))).serialize()
         except Exception as e:
             self._logexception(e)
             return HttpErrorResponse(HttpError(500, str(e))).serialize()
@@ -129,32 +134,30 @@ class RequestDispatcher(object):
 
 
 class ResponseMixin(object):
-    def respond(
+    def _respond(
         self,
         response: Union[Response, dict, str, int, float, bool, bytes],
         status_code: int = 200,
         headers: dict = None,
     ):
-        if isinstance(response, (Response, JsonResponse)):
+        try:
+            if isinstance(response, dict):
+                response = JsonResponse(response, status_code, headers)
+            elif isinstance(response, (str, int, float, bool, bytes)):
+                response = Response(str(response), status_code, headers)
+            elif isinstance(response, ValidationError):
+                response = HttpErrorResponse(HttpError(400, str(response)))
+            elif isinstance(response, HttpError):
+                self._logexception(response)
+                response = HttpErrorResponse(response)
+            elif isinstance(response, Exception):
+                self._logexception(response)
+                response = HttpErrorResponse(HttpError(500, str(response)))
             return response.serialize()
-        elif isinstance(response, dict):
-            return JsonResponse(
-                data=response,
-                status=status_code,
-                headers=headers,
-            ).serialize()
-        elif isinstance(response, (str, bytes, int, float, bool)):
-            return Response(
-                data=response,
-                status=status_code,
-                headers=headers,
-            ).serialize()
-        else:
-            raise ValueError(
-                "Response must be instance of Response, dict or str, got {}".format(
-                    type(response)
-                )
-            )
+        except Exception as e:
+            print(e)
+            self._logexception(e)
+            return HttpErrorResponse(HttpError(500, str(e))).serialize()
 
 
 class MiddlewareMixin(object):
