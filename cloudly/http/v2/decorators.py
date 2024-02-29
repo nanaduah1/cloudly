@@ -9,7 +9,7 @@ def user_required(groups=None):
 
     def decorator(decorated):
         @wraps(decorated)
-        def wrapper(request: Request, **kwargs):
+        def wrapper(self, request: Request, **kwargs):
             user = _get_user(request)
             if not user:
                 raise HttpError("Unauthorized", 401)
@@ -18,8 +18,8 @@ def user_required(groups=None):
                 raise HttpError("Forbidden", 403)
             if groups and not any(group in user["cognito:groups"] for group in groups):
                 raise HttpError("Forbidden", 403)
-            setattr(request, "user", User(user))
-            return decorated(request, **kwargs)
+            request.set("user", User(user))
+            return decorated(self, request, **kwargs)
 
         return wrapper
 

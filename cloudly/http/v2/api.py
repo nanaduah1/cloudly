@@ -52,6 +52,7 @@ class Request(object):
     def __init__(self, data: dict):
         self._event_data = data
         self.context = RequestContext(data)
+        self.user = None
 
     @property
     def version(self):
@@ -93,43 +94,38 @@ class Request(object):
     def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
 
-    @property
-    def user(self) -> User:
-        return getattr(self, "user", None)
-
 
 class RequestDispatcher(object):
     def dispatch(self, request: Request, context: Any):
         method = request.method.lower()
         path_parameters = request.pathParameters
-        if hasattr(self, method):
-            handler = getattr(self, method)
 
-            # All arguments except self and request
-            arg_names = handler.__code__.co_varnames
-            constant_args = ("self", "request")
-            handler_args = (a for a in arg_names if a not in constant_args)
-
-            # Extract only the parameters the handler needs
-            actual_args = {
-                k: v for k, v in path_parameters.items() if k in handler_args
-            }
-
-            def _logexception(e):
-                if self.logger:
-                    self.logger.error(str(e))
-
-            try:
-                return handler(request, **actual_args)
-            except HttpError as e:
-                _logexception(e)
-                return HttpErrorResponse(e).serialize()
-            except Exception as e:
-                _logexception(e)
-                return HttpErrorResponse(HttpError(500, str(e))).serialize()
-        else:
+        handler = getattr(self, method, None)
+        if not handler:
             error = HttpError(501, "Method not implemented")
             return HttpErrorResponse(error).serialize()
+
+        # All arguments except self and request
+        arg_names = handler.__code__.co_varnames
+        constant_args = ("self", "request")
+        handler_args = (a for a in arg_names if a not in constant_args)
+
+        # Extract only the parameters the handler needs
+        actual_args = {k: v for k, v in path_parameters.items() if k in handler_args}
+
+        try:
+            return handler(request, **actual_args)
+        except HttpError as e:
+            self._logexception(e)
+            return HttpErrorResponse(e).serialize()
+        except Exception as e:
+            self._logexception(e)
+            return HttpErrorResponse(HttpError(500, str(e))).serialize()
+
+    def _logexception(self, e):
+        if self.logger:
+            self.logger.error(str(e))
+        print(e)
 
 
 class ResponseMixin(object):
