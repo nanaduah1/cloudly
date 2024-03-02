@@ -207,5 +207,24 @@ class _ValidatorMixin(object):
 
 
 class Schema(_ValidatorMixin):
-    def __init__(self, **kwargs):
+    internal = None
+
+    def __init__(self, instance=None, **kwargs):
         self.__dict__.update(kwargs)
+        self.error = None
+        self.instance = instance
+
+    def serialize(self):
+        if not self.instance:
+            raise Exception("You must instantiate Schema with instance to serialize")
+
+        if isinstance(self.instance, dict):
+            return self.instance
+
+        if hasattr(self.instance, "to_dict"):
+            return self.instance.to_dict()
+
+        if isinstance(self.instance, Iterable):
+            return [self.serialize() for i in self.instance]
+
+        return self.instance.__dict__
