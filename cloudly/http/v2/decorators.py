@@ -1,5 +1,5 @@
 from functools import wraps
-from cloudly.http.v2.api import HttpError, Request, User
+from cloudly.http.v2.api import Response, Request, User
 
 
 def user_required(*groups):
@@ -11,15 +11,12 @@ def user_required(*groups):
         @wraps(decorated)
         def wrapper(self, request: Request, *args, **kwargs):
             user = _get_user(request)
-            if not user:
-                raise HttpError("Unauthorized", 401)
-
-            if groups and "cognito:groups" not in user:
-                raise HttpError("Forbidden", 403)
-            if groups and not any(group in user["cognito:groups"] for group in groups):
-                raise HttpError("Forbidden", 403)
-            request.set("user", User(user))
-            return decorated(self, request, *args, **kwargs)
+            if user:
+                user_groups = request.context.user_groups
+                if not groups or any(group in user_groups for group in groups):
+                    request.set("user", User(user))
+                    return decorated(self, request, *args, **kwargs)
+            return Response("Unauthorized", status=401)
 
         return wrapper
 
