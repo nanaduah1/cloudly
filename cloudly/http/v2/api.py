@@ -43,7 +43,11 @@ class HttpErrorResponse(Response):
 
 class User:
     def __init__(self, user: dict):
+        custom_attributes = {
+            k.split(":")[1]: v for k, v in user.items() if k.startswith("custom:")
+        }
         self._user = user
+        self.custom = type("CustomObj", (object,), custom_attributes)()
 
     def __getattr__(self, name):
         return self._user.get(name)
