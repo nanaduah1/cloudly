@@ -177,12 +177,16 @@ class ListField(_Field):
 
 
 class _ValidatorMixin(object):
+    def _public_attributes(self):
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
         self.error = None
 
     def is_valid(self) -> bool:
-        data = self.__dict__
+        # Get all public attributes
+        data = self._public_attributes()
         schema = self._schema
         if not schema:
             return True
@@ -207,24 +211,7 @@ class _ValidatorMixin(object):
 
 
 class Schema(_ValidatorMixin):
-    internal = None
-
     def __init__(self, instance=None, **kwargs):
         self.__dict__.update(kwargs)
-        self.error = None
-        self.instance = instance
-
-    def serialize(self):
-        if not self.instance:
-            raise Exception("You must instantiate Schema with instance to serialize")
-
-        if isinstance(self.instance, dict):
-            return self.instance
-
-        if hasattr(self.instance, "to_dict"):
-            return self.instance.to_dict()
-
-        if isinstance(self.instance, Iterable):
-            return [self.serialize() for i in self.instance]
-
-        return self.instance.__dict__
+        self._error = None
+        self._instance = instance
