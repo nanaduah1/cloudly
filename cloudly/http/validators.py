@@ -26,6 +26,8 @@ class Rule(ABC):
 @dataclass
 class Validator:
     schema: Dict[str, Union[Rule, Dict[str, Rule]]]
+    ignore_required: bool = False
+    return_schema_fields_only: bool = False
 
     def validate(self, data: dict, rasie_exception: bool = True) -> dict:
         input = {**data}
@@ -37,7 +39,10 @@ class Validator:
     def _run_validators(self, data: dict, schema: dict) -> Tuple[dict, List[str]]:
         errors = []
         input_data = data or {}
-        cleaned_data = {**input_data}
+        cleaned_data = {}
+        if self.return_schema_fields_only is False:
+            cleaned_data = {**input_data}
+
         for v_field, validator in schema.items():
             if not validator:
                 continue
@@ -57,6 +62,10 @@ class Validator:
                     field_validators = [validator]
 
                 for f_validator in field_validators:
+                    # In some cases like patch requests we
+                    # want to ignore the required field validation
+                    if self.ignore_required and isinstance(f_validator, Required):
+                        continue
                     cleaned_value, error = f_validator.validate(value)
                     if error:
                         errors.append(error)

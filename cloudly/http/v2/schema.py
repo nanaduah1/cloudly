@@ -178,6 +178,8 @@ class ListField(_Field):
 
 class _ValidatorMixin(object):
     non_model_fields = ["request", "error"]
+    ignore_required_for = ["GET", "DELETE", "PATCH"]
+    accept_schema_fields_only = True
 
     def _public_attributes(self):
         return {
@@ -197,7 +199,15 @@ class _ValidatorMixin(object):
         if not schema:
             return True
 
-        validator = Validator(schema)
+        ignore_required = False
+        if hasattr(self, "request"):
+            ignore_required = self.request.method.upper() in self.ignore_required_for
+
+        validator = Validator(
+            schema,
+            ignore_required=ignore_required,
+            return_schema_fields_only=self.accept_schema_fields_only,
+        )
         try:
             self.cleaned_data = validator.validate(data)
             validated_data = self.validate(self.cleaned_data)
