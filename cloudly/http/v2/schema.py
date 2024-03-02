@@ -177,8 +177,14 @@ class ListField(_Field):
 
 
 class _ValidatorMixin(object):
+    non_model_fields = ["request", "error"]
+
     def _public_attributes(self):
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        return {
+            k: v
+            for k, v in self.__dict__.items()
+            if k not in self.non_model_fields and not k.startswith("_")
+        }
 
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -211,7 +217,6 @@ class _ValidatorMixin(object):
 
 
 class Schema(_ValidatorMixin):
-    def __init__(self, instance=None, **kwargs):
+    def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
         self._error = None
-        self._instance = instance

@@ -2,7 +2,7 @@ from functools import wraps
 from cloudly.http.v2.api import HttpError, Request, User
 
 
-def user_required(groups=None):
+def user_required(*groups):
     import boto3
 
     cognito_client = boto3.client("cognito-idp")
