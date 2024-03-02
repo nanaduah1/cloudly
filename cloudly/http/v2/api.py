@@ -110,13 +110,9 @@ class RequestDispatcher(object):
             error = HttpError(501, "Method not implemented")
             return HttpErrorResponse(error).serialize()
 
-        # All arguments except self and request
-        arg_names = handler.__code__.co_varnames
-        constant_args = ("self", "request")
-        handler_args = (a for a in arg_names if a not in constant_args)
-
-        # Extract only the parameters the handler needs
-        actual_args = {k: v for k, v in path_parameters.items() if k in handler_args}
+        actual_args = {}
+        if path_parameters:
+            actual_args.update(path_parameters)
 
         try:
             response = handler(request, **actual_args)
