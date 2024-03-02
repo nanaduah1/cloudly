@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloudly"
-version = "2.0.7"
+version = "2.0.8"
 description = ""
 authors = ["Nana Duah <gabano2005@gmail.com>"]
 readme = "README.md"
