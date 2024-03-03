@@ -69,7 +69,11 @@ class Validator:
                     cleaned_value, error = f_validator.validate(value)
                     if error:
                         errors.append(error)
-                    cleaned_data[v_field] = cleaned_value if cleaned_value else value
+
+                    if v_field in input_data:
+                        cleaned_data[v_field] = (
+                            cleaned_value if cleaned_value else value
+                        )
 
         return cleaned_data, errors
 

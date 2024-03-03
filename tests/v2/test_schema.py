@@ -145,3 +145,28 @@ def test_can_access_values_after_is_valid():
     user = User(name="test")
     user.is_valid()
     assert user.name == "test"
+
+
+def test_only_input_fields_are_returned():
+    class Other(schema.Schema):
+        name = schema.StringField(required=False, max_length=10, min_length=5)
+        quantity = schema.IntegerField(required=False)
+        limited = schema.BooleanField(required=False)
+
+    class User(schema.Schema):
+        name = schema.StringField(required=True, max_length=10, min_length=5)
+        age = schema.IntegerField(required=True)
+        description = schema.StringField(required=False, max_length=10, min_length=5)
+        other = schema.ObjectField(Other, required=False)
+
+    user = User(
+        name="test",
+        age=10,
+        other={"name": "test", "quantity": 10},
+    )
+    assert user.is_valid()
+    assert user.cleaned_data == {
+        "name": "test",
+        "age": 10,
+        "other": {"name": "test", "quantity": 10},
+    }

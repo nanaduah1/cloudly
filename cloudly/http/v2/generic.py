@@ -72,7 +72,8 @@ class UpdateModelApi(HttpApi):
         return JsonResponse(instance.to_dict())
 
     def update_instance(self, request: Request, id: str, data: dict):
-        return self.model.items.update(id, **data)
+        self.model.items.update(id, **data)
+        return self.model.items.get(id=id)
 
     def patch(self, request: Request, id: str):
         return self.put(request, id)
