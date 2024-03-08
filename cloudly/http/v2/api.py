@@ -118,18 +118,23 @@ class RequestDispatcher(object):
             response = handler(request, **actual_args)
             return self._respond(response)
         except HttpError as e:
-            self._logexception(e)
+            self._log_error(e)
             return HttpErrorResponse(e).serialize()
         except ValidationError as e:
-            self._logexception(e)
+            self._log_error(e)
             return HttpErrorResponse(HttpError(400, str(e))).serialize()
         except Exception as e:
-            self._logexception(e)
+            self._log_exception(e)
             return HttpErrorResponse(HttpError(500, str(e))).serialize()
 
-    def _logexception(self, e):
+    def _log_error(self, e):
         if self.logger:
             self.logger.error(str(e))
+        print(e)
+
+    def _log_exception(self, e):
+        if self.logger:
+            self.logger.exception("Server Error", e)
         print(e)
 
 
