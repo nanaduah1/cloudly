@@ -44,10 +44,10 @@ class Validator:
             cleaned_data = {**input_data}
 
         for v_field, validator in schema.items():
+            value = input_data.get(v_field)
+            cleaned_data[v_field] = value
             if not validator:
                 continue
-
-            value = input_data.get(v_field)
 
             if isinstance(validator, dict):
                 cleaned_value, inner_errors = self._run_validators(
